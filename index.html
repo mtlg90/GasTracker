@@ -1,404 +1,405 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gas Tracker</title>
-  <!-- Icona (opzionale, metti icon.png nella root) -->
-  <link rel="icon" type="image/png" sizes="192x192" href="icon.png">
-  <link rel="apple-touch-icon" href="icon.png">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Gas Tracker — Modern</title>
+  <link rel="icon" href="icon.png">
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f3f4f6;
+    /* Modern dark UI */
+    :root{
+      --bg1:#071023; --bg2:#071428; --text:#e6eef8; --muted:#9ca3af;
+      --accent1:#7c3aed; --accent2:#06b6d4; --glass:rgba(255,255,255,0.03);
+      --radius:14px; --gap:14px; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
     }
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 16px;
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--text);-webkit-font-smoothing:antialiased}
+    .container{max-width:1100px;margin:20px auto;padding:18px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent1),var(--accent2))}
+    .logo svg{width:26px;height:26px}
+    h1{font-size:20px;margin:0}
+    .subtitle{color:var(--muted);font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:var(--gap);margin-top:18px}
+    .card{background:linear-gradient(180deg,var(--glass),rgba(255,255,255,0.015));backdrop-filter: blur(6px);border-radius:var(--radius);padding:14px;box-shadow:0 8px 30px rgba(2,6,23,0.6)}
+    .col-span-4{grid-column:span 4}
+    .col-span-8{grid-column:span 8}
+    label{font-size:13px;color:var(--muted);display:block;margin-top:8px}
+    input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;box-sizing:border-box}
+    textarea{min-height:64px;resize:vertical}
+    .row{display:flex;gap:10px}
+    button{background:linear-gradient(90deg,var(--accent1),var(--accent2));border:none;padding:10px 14px;border-radius:12px;color:#fff;font-weight:600;cursor:pointer}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+    .stats{display:flex;gap:12px}
+    .stat{flex:1;padding:14px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));text-align:center}
+    .stat .value{font-size:18px;font-weight:700}
+    table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+    th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left}
+    @media(max-width:760px){
+      .grid{grid-template-columns:1fr}
+      .col-span-4,.col-span-8{grid-column:1}
+      .mobile-hide{display:none}
     }
-    h1 {
-      text-align: center;
-      margin-bottom: 4px;
-      font-size: 22px;
-    }
-    .subtitle {
-      text-align: center;
-      font-size: 13px;
-      color: #6b7280;
-      margin-bottom: 16px;
-    }
-    .card {
-      background: #ffffff;
-      border-radius: 12px;
-      padding: 12px 14px;
-      margin-bottom: 12px;
-      box-shadow: 0 4px 12px rgba(15,23,42,0.06);
-    }
-    h2 {
-      font-size: 16px;
-      margin: 0 0 8px 0;
-    }
-    label {
-      display: block;
-      margin-top: 8px;
-      font-size: 13px;
-      color: #111827;
-    }
-    input, textarea {
-      width: 100%;
-      padding: 8px 10px;
-      margin-top: 4px;
-      box-sizing: border-box;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
-      font-size: 14px;
-    }
-    textarea {
-      min-height: 48px;
-      resize: vertical;
-    }
-    .row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .col {
-      flex: 1;
-      min-width: 150px;
-    }
-    button {
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 10px;
-      border: none;
-      width: 100%;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .btn-primary {
-      background: #2563eb;
-      color: #ffffff;
-    }
-    .btn-danger {
-      background: #dc2626;
-      color: #ffffff;
-    }
-    .btn-secondary {
-      background: #e5e7eb;
-      color: #111827;
-    }
-    .btn-inline {
-      width: auto;
-      padding: 6px 10px;
-      font-size: 13px;
-      margin: 0 4px;
-    }
-    #message {
-      font-size: 13px;
-      margin-top: 6px;
-    }
-    .message-ok { color: #16a34a; }
-    .message-error { color: #dc2626; }
-
-    .stats {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      font-size: 13px;
-    }
-    .stat-item {
-      background: #f9fafb;
-      border-radius: 8px;
-      padding: 6px 8px;
-      flex: 1;
-      min-width: 160px;
-    }
-    .stat-label {
-      color: #6b7280;
-      font-size: 12px;
-    }
-    .stat-value {
-      font-weight: 600;
-      color: #111827;
-      margin-top: 2px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-      margin-top: 8px;
-    }
-    th, td {
-      border: 1px solid #e5e7eb;
-      padding: 6px;
-      text-align: center;
-    }
-    th {
-      background: #f9fafb;
-    }
-
-    @media (max-width: 600px) {
-      .card { padding: 10px; }
-      h1 { font-size: 20px; }
-      input, textarea { font-size: 16px; }
-      button { font-size: 15px; }
-      table { font-size: 12px; }
-    }
+    .chart-wrap{height:260px;padding:10px}
+    .small{font-size:12px;color:var(--muted)}
+    /* touch improvements */
+    button, input, textarea { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   </style>
 
-  <!-- Firebase SDK compat -->
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Firebase compat -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <script>
-    // Configurazione Firebase (la tua)
-    const firebaseConfig = {
-      apiKey: "AIzaSyCdY2xuLVTBmwUbs-sud5g6W-7eedoI1Qk",
-      authDomain: "gastracker-a4bc5.firebaseapp.com",
-      databaseURL: "https://gastracker-a4bc5-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "gastracker-a4bc5",
-      storageBucket: "gastracker-a4bc5.firebasestorage.app",
-      messagingSenderId: "523976617358",
-      appId: "1:523976617358:web:1494df462f40813ec548df"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-
-    function showMessage(text, type) {
-      const el = document.getElementById('message');
-      el.textContent = text || '';
-      el.className = '';
-      if (type === 'ok') el.classList.add('message-ok');
-      if (type === 'error') el.classList.add('message-error');
-      if (text) {
-        setTimeout(() => { el.textContent = ''; el.className=''; }, 3000);
-      }
-    }
-
-    function saveReading() {
-      const date = document.getElementById('date').value;
-      const reading = document.getElementById('reading').value;
-      const temp = document.getElementById('temp').value;
-      const notes = document.getElementById('notes').value;
-      const priceMp = document.getElementById('price_mp').value;
-      const fixedCharge = document.getElementById('fixed_charge').value;
-
-      if (!date || !reading || !temp) {
-        showMessage('Compila almeno data, lettura e temperatura.', 'error');
-        return;
-      }
-
-      // salvo anche i parametri di costo in un nodo separato
-      const updates = {};
-      updates['/readings/' + date] = {
-        reading: parseFloat(reading),
-        temperature: parseFloat(temp),
-        notes: notes || '',
-        timestamp: Date.now()
-      };
-      updates['/settings'] = {
-        price_mp: parseFloat(priceMp) || 0,
-        fixed_charge: parseFloat(fixedCharge) || 0
-      };
-
-      database.ref().update(updates, (error) => {
-        if (error) {
-          showMessage('Errore salvataggio: ' + error, 'error');
-        } else {
-          showMessage('Lettura e parametri salvati.', 'ok');
-          loadAll(); // ricarica tabella + statistiche
-        }
-      });
-    }
-
-    function clearAllReadings() {
-      if (!confirm('Vuoi davvero cancellare tutte le letture?')) return;
-      database.ref('readings').remove()
-        .then(() => {
-          showMessage('Tutte le letture cancellate.', 'ok');
-          loadAll();
-        })
-        .catch(err => showMessage('Errore: ' + err, 'error'));
-    }
-
-    function loadAll() {
-      // carico sia letture sia settings
-      Promise.all([
-        database.ref('readings').once('value'),
-        database.ref('settings').once('value')
-      ]).then(([snapReadings, snapSettings]) => {
-        const readingsVal = snapReadings.val() || {};
-        const settingsVal = snapSettings.val() || {};
-
-        // ripristina parametri costo nei campi input
-        if (typeof settingsVal.price_mp !== 'undefined') {
-          document.getElementById('price_mp').value = settingsVal.price_mp;
-        }
-        if (typeof settingsVal.fixed_charge !== 'undefined') {
-          document.getElementById('fixed_charge').value = settingsVal.fixed_charge;
-        }
-
-        renderReadings(readingsVal);
-        computeStats(readingsVal, settingsVal);
-      });
-    }
-
-    function renderReadings(readingsObj) {
-      const tbody = document.getElementById('readingsBody');
-      tbody.innerHTML = '';
-
-      const dates = Object.keys(readingsObj);
-      dates.sort(); // crescente
-
-      dates.forEach(date => {
-        const r = readingsObj[date];
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${date}</td>
-          <td>${r.reading}</td>
-          <td>${r.temperature}</td>
-          <td>${r.notes || ''}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function computeStats(readingsObj, settings) {
-      const dates = Object.keys(readingsObj);
-      dates.sort();
-      if (dates.length < 2) {
-        // non ha senso media se non hai almeno 2 letture
-        document.getElementById('avgDaily').textContent = '-';
-        document.getElementById('estMonthlySmc').textContent = '-';
-        document.getElementById('estMonthlyCost').textContent = '-';
-        document.getElementById('total').textContent = dates.length;
-        return;
-      }
-
-      let consumi = [];
-      for (let i = 1; i < dates.length; i++) {
-        const prev = readingsObj[dates[i - 1]].reading;
-        const cur = readingsObj[dates[i]].reading;
-        const diff = cur - prev;
-        if (!isNaN(diff) && diff >= 0) consumi.push(diff);
-      }
-
-      if (consumi.length === 0) {
-        document.getElementById('avgDaily').textContent = '-';
-        document.getElementById('estMonthlySmc').textContent = '-';
-        document.getElementById('estMonthlyCost').textContent = '-';
-        document.getElementById('total').textContent = dates.length;
-        return;
-      }
-
-      const somma = consumi.reduce((a, b) => a + b, 0);
-      const avgDaily = somma / consumi.length;
-      const estMonthly = avgDaily * 30;
-
-      const priceMp = settings.price_mp || 0;
-      const fixedCharge = settings.fixed_charge || 0;
-      const estCost = estMonthly * priceMp + fixedCharge;
-
-      document.getElementById('total').textContent = dates.length;
-      document.getElementById('avgDaily').textContent = avgDaily.toFixed(3) + ' Smc/giorno';
-      document.getElementById('estMonthlySmc').textContent = estMonthly.toFixed(1) + ' Smc/30gg';
-      document.getElementById('estMonthlyCost').textContent = estCost.toFixed(2) + ' € / mese stimato';
-    }
-
-    window.onload = loadAll;
-  </script>
 </head>
 <body>
   <div class="container">
-    <h1>Gas Tracker</h1>
-    <div class="subtitle">Sincronizzato via Firebase — dati condivisi tra Mac e iPhone</div>
-
-    <!-- Parametri di costo -->
-    <div class="card">
-      <h2>Parametri di costo</h2>
-      <div class="row">
-        <div class="col">
-          <label>Prezzo materia prima (€/Smc)
-            <input id="price_mp" type="number" step="0.0001" value="0.80">
-          </label>
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C12 2 8 7 8 11.5C8 15 10 17 12 18C14 17 16 15 16 11.5C16 7 12 2 12 2Z" fill="white" opacity="0.95"/></svg>
         </div>
-        <div class="col">
-          <label>Oneri fissi mensili (€)
-            <input id="fixed_charge" type="number" step="0.01" value="10.00">
-          </label>
+        <div>
+          <h1>Gas Tracker</h1>
+          <div class="subtitle">Previsioni & storico — sincronizzato (Firebase)</div>
         </div>
       </div>
-      <div id="message"></div>
-    </div>
 
-    <!-- Nuova lettura -->
-    <div class="card">
-      <h2>Nuova lettura</h2>
-      <label>Data
-        <input type="date" id="date">
-      </label>
-      <div class="row">
-        <div class="col">
-          <label>Lettura contatore (Smc)
-            <input type="number" id="reading" step="0.001" placeholder="es. 1234.567">
-          </label>
-        </div>
-        <div class="col">
-          <label>Temperatura minima esterna (°C)
-            <input type="number" id="temp" step="0.1" placeholder="es. 3.5">
-          </label>
-        </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="exportBtn" class="ghost" title="Esporta CSV">Esporta CSV</button>
+        <button id="importBtn" class="ghost" title="Importa CSV">Importa CSV</button>
+        <button id="saveBtn" title="Salva lettura">Salva</button>
       </div>
-      <label>Note (opzionale)
-        <textarea id="notes" placeholder="es. weekend fuori casa, ospiti, termosifoni spenti..."></textarea>
-      </label>
-      <button class="btn-primary" onclick="saveReading()">Salva lettura</button>
-      <button class="btn-danger" onclick="clearAllReadings()">Cancella tutte le letture</button>
-    </div>
+    </header>
 
-    <!-- Statistiche -->
-    <div class="card">
-      <h2>Statistiche</h2>
-      <div class="stats">
-        <div class="stat-item">
-          <div class="stat-label">Numero letture</div>
-          <div class="stat-value" id="total">0</div>
+    <div class="grid" role="main">
+      <div class="card col-span-4" aria-labelledby="paramsTitle">
+        <h3 id="paramsTitle">Parametri & nuova lettura</h3>
+
+        <label>Prezzo materia prima (€/Smc)
+          <input id="price_mp" type="number" step="0.0001" value="0.80" />
+        </label>
+        <label>Oneri fissi mensili (€)
+          <input id="fixed_charge" type="number" step="0.01" value="10.00" />
+        </label>
+
+        <h4 style="margin-top:12px">Aggiungi lettura</h4>
+        <label>Data
+          <input id="date" type="date" />
+        </label>
+
+        <div class="row" style="margin-top:6px">
+          <div style="flex:1">
+            <label>Lettura (Smc)
+              <input id="reading" type="number" step="0.001" placeholder="es. 1234.567" />
+            </label>
+          </div>
+          <div style="width:120px">
+            <label>Ora
+              <input id="time" type="time" />
+            </label>
+          </div>
         </div>
-        <div class="stat-item">
-          <div class="stat-label">Consumo medio giornaliero</div>
-          <div class="stat-value" id="avgDaily">-</div>
+
+        <label>Temperatura minima (°C)
+          <input id="temp" type="number" step="0.1" placeholder="es. 3.5" />
+        </label>
+        <label>Note (opzionale)
+          <textarea id="notes" placeholder="es. weekend fuori casa"></textarea>
+        </label>
+
+        <div style="display:flex;gap:10px;margin-top:10px">
+          <button id="addBtn">Aggiungi</button>
+          <button id="clearBtn" class="ghost">Cancella tutto</button>
         </div>
-        <div class="stat-item">
-          <div class="stat-label">Stima consumo 30 giorni</div>
-          <div class="stat-value" id="estMonthlySmc">-</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Costo mensile stimato</div>
-          <div class="stat-value" id="estMonthlyCost">-</div>
-        </div>
+
+        <div id="message" class="small" style="margin-top:8px"></div>
       </div>
-    </div>
 
-    <!-- Registro letture -->
-    <div class="card">
-      <h2>Registro letture</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Data</th>
-            <th>Lettura (Smc)</th>
-            <th>Temperatura (°C)</th>
-            <th>Note</th>
-          </tr>
-        </thead>
-        <tbody id="readingsBody"></tbody>
-      </table>
+      <div class="card col-span-8" aria-labelledby="statsTitle">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <h3 id="statsTitle">Statistiche & grafico</h3>
+            <div class="small">Ultima lettura del giorno usata per calcoli</div>
+          </div>
+          <div class="stats mobile-hide" style="width:55%">
+            <div class="stat"><div class="small">Letture</div><div class="value" id="total">0</div></div>
+            <div class="stat"><div class="small">Media/giorno</div><div class="value" id="avgDaily">-</div></div>
+            <div class="stat"><div class="small">Stima 30gg</div><div class="value" id="estMonthlySmc">-</div></div>
+            <div class="stat"><div class="small">Costo stimato</div><div class="value" id="estMonthlyCost">-</div></div>
+          </div>
+        </div>
+
+        <div class="chart-wrap card" style="margin-top:12px">
+          <canvas id="chart"></canvas>
+        </div>
+
+        <h4 style="margin-top:12px">Registro letture</h4>
+        <table role="table" aria-label="Registro letture">
+          <thead><tr><th>Data</th><th>Ora</th><th>Smc</th><th>Temp</th><th>Note</th><th>Azioni</th></tr></thead>
+          <tbody id="readingsBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
+
+  <!-- hidden file input for import -->
+  <input id="fileImport" type="file" accept=".csv,text/csv" style="display:none" />
+
+<script>
+/* ================== Firebase config (Realtime DB) ================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyCdY2xuLVTBmwUbs-sud5g6W-7eedoI1Qk",
+  authDomain: "gastracker-a4bc5.firebaseapp.com",
+  databaseURL: "https://gastracker-a4bc5-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "gastracker-a4bc5",
+  storageBucket: "gastracker-a4bc5.firebasestorage.app",
+  messagingSenderId: "523976617358",
+  appId: "1:523976617358:web:1494df462f40813ec548df"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* ================== Utilities ================== */
+function showMessage(msg, type){
+  const el = document.getElementById('message');
+  el.textContent = msg || '';
+  el.style.color = type === 'error' ? '#fca5a5' : (type === 'ok' ? '#86efac' : 'var(--muted)');
+  if(msg) setTimeout(()=>{ if(el.textContent===msg) el.textContent=''; }, 3000);
+}
+function pad(n){ return String(n).padStart(2,'0'); }
+function isoWithTime(dateStr, timeStr){
+  if(!timeStr) timeStr = '00:00:00';
+  if(timeStr.length===5) timeStr += ':00';
+  return `${dateStr}T${timeStr}`;
+}
+
+/* ================== Chart init ================== */
+let chart;
+function initChart(){
+  const ctx = document.getElementById('chart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: [], datasets: [{ label: 'Smc (ultima lettura/giorno)', data: [], fill: true, tension: 0.3, backgroundColor: 'rgba(124,58,237,0.12)', borderColor: '#7c3aed', pointRadius: 3 }]},
+    options: { responsive: true, plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } }, scales: { x: { display: true }, y: { display: true } } }
+  });
+}
+
+/* ================== Core logic ================== */
+function addReading(){
+  const date = document.getElementById('date').value;
+  const readingRaw = document.getElementById('reading').value;
+  const time = document.getElementById('time').value;
+  const tempRaw = document.getElementById('temp').value;
+  const notes = document.getElementById('notes').value || '';
+
+  if(!date || readingRaw === '') { showMessage('Inserisci data e lettura', 'error'); return; }
+  const reading = parseFloat(readingRaw);
+  const temperature = tempRaw === '' ? null : parseFloat(tempRaw);
+  const datetime = isoWithTime(date, time);
+  const timestamp = Date.now();
+
+  const newKey = db.ref('readings').push().key;
+  const updates = {};
+  updates['/readings/' + newKey] = { date, datetime, reading, temperature, notes, timestamp };
+  // also persist settings
+  updates['/settings/price_mp'] = parseFloat(document.getElementById('price_mp').value) || 0;
+  updates['/settings/fixed_charge'] = parseFloat(document.getElementById('fixed_charge').value) || 0;
+
+  db.ref().update(updates)
+    .then(()=>{ showMessage('Lettura salvata', 'ok'); document.getElementById('reading').value=''; document.getElementById('notes').value=''; loadAll(); })
+    .catch(err=> showMessage('Errore: '+err, 'error'));
+}
+
+function deleteReading(key){
+  if(!confirm('Eliminare questa lettura?')) return;
+  db.ref('readings/' + key).remove().then(()=>{ showMessage('Lettura eliminata','ok'); loadAll(); }).catch(e=>showMessage('Errore: '+e,'error'));
+}
+
+function clearAll(){
+  if(!confirm('Cancellare tutte le letture?')) return;
+  db.ref('readings').remove().then(()=>{ showMessage('Tutti i dati cancellati','ok'); loadAll(); }).catch(e=>showMessage('Errore: '+e,'error'));
+}
+
+function loadAll(){
+  Promise.all([ db.ref('readings').once('value'), db.ref('settings').once('value') ])
+    .then(([snapR, snapS])=>{
+      const readingsObj = snapR.val() || {};
+      const settings = snapS.val() || {};
+      if(typeof settings.price_mp !== 'undefined') document.getElementById('price_mp').value = settings.price_mp;
+      if(typeof settings.fixed_charge !== 'undefined') document.getElementById('fixed_charge').value = settings.fixed_charge;
+      renderAll(readingsObj, settings);
+    })
+    .catch(err => showMessage('Errore caricamento: '+err,'error'));
+}
+
+function renderAll(readingsObj, settings){
+  // to array with keys
+  const arr = Object.keys(readingsObj).map(k => ({ key: k, ...readingsObj[k] }));
+  arr.sort((a,b)=> (a.timestamp||0) - (b.timestamp||0)); // asc
+
+  // table
+  const tbody = document.getElementById('readingsBody');
+  tbody.innerHTML = '';
+  arr.slice().reverse().forEach(r=>{
+    const time = (r.datetime || '').slice(11,19) || '-';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.date}</td><td>${time}</td><td>${Number(r.reading).toFixed(3)}</td><td>${r.temperature!==null && typeof r.temperature!=='undefined' ? r.temperature : '-'}</td><td>${(r.notes||'')}</td><td><button class="ghost" onclick="deleteReading('${r.key}')">Elimina</button></td>`;
+    tbody.appendChild(tr);
+  });
+
+  // stats: group by date keep last reading per day (max timestamp)
+  const byDate = {};
+  arr.forEach(r=>{
+    if(!byDate[r.date] || (r.timestamp||0) > (byDate[r.date].timestamp||0)) byDate[r.date] = r;
+  });
+
+  const dates = Object.keys(byDate).sort(); // asc
+  if(dates.length < 2){
+    document.getElementById('total').textContent = dates.length;
+    document.getElementById('avgDaily').textContent = '-';
+    document.getElementById('estMonthlySmc').textContent = '-';
+    document.getElementById('estMonthlyCost').textContent = '-';
+    updateChart([], []);
+    return;
+  }
+
+  // last readings per day ordered
+  const lastPerDay = dates.map(d => byDate[d]);
+  const diffs = [];
+  for(let i=1;i<lastPerDay.length;i++){
+    const diff = Number(lastPerDay[i].reading) - Number(lastPerDay[i-1].reading);
+    if(!isNaN(diff) && diff >= 0) diffs.push(diff);
+  }
+  if(diffs.length === 0){
+    document.getElementById('total').textContent = dates.length;
+    document.getElementById('avgDaily').textContent = '-';
+    document.getElementById('estMonthlySmc').textContent = '-';
+    document.getElementById('estMonthlyCost').textContent = '-';
+    updateChart(lastPerDay.map(x=>x.date), lastPerDay.map(x=>x.reading));
+    return;
+  }
+
+  const sum = diffs.reduce((a,b)=>a+b,0);
+  const avgDaily = sum / diffs.length;
+  const estMonthly = avgDaily * 30;
+  const priceMp = settings.price_mp || parseFloat(document.getElementById('price_mp').value) || 0;
+  const fixedCharge = settings.fixed_charge || parseFloat(document.getElementById('fixed_charge').value) || 0;
+  const estCost = estMonthly * priceMp + fixedCharge;
+
+  document.getElementById('total').textContent = dates.length;
+  document.getElementById('avgDaily').textContent = avgDaily.toFixed(3) + ' Smc/g';
+  document.getElementById('estMonthlySmc').textContent = estMonthly.toFixed(1) + ' Smc';
+  document.getElementById('estMonthlyCost').textContent = estCost.toFixed(2) + ' €';
+
+  updateChart(lastPerDay.map(x=>x.date), lastPerDay.map(x=>x.reading));
+}
+
+/* ================== Chart update ================== */
+function updateChart(labels, data){
+  if(!chart) return;
+  if(!labels || labels.length === 0){ chart.data.labels = []; chart.data.datasets[0].data = []; chart.update(); return; }
+  chart.data.labels = labels;
+  chart.data.datasets[0].data = data;
+  chart.update();
+}
+
+/* ================== Export / Import CSV ================== */
+function exportCsv(){
+  db.ref('readings').once('value').then(snap=>{
+    const obj = snap.val() || {};
+    const rows = [['key','date','datetime','reading','temperature','notes']];
+    Object.keys(obj).forEach(k=>{
+      const r = obj[k];
+      rows.push([k, r.date || '', r.datetime || '', r.reading || '', r.temperature || '', (r.notes||'').replace(/"/g,'""')]);
+    });
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'gas_readings.csv'; a.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
+function importCsvHandler(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    const text = e.target.result;
+    const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0);
+    if(lines.length<=1){ showMessage('CSV vuoto o non valido', 'error'); return; }
+    // skip header
+    const dataLines = lines.slice(1);
+    const updates = {};
+    dataLines.forEach(line=>{
+      // naive CSV parse assuming quoted fields
+      const cols = splitCsvLine(line);
+      if(cols.length < 6) return;
+      const key = cols[0] || db.ref('readings').push().key;
+      updates['/readings/' + key] = {
+        date: cols[1],
+        datetime: cols[2],
+        reading: parseFloat(cols[3]) || 0,
+        temperature: cols[4] === '' ? null : parseFloat(cols[4]),
+        notes: cols[5] || '',
+        timestamp: Date.now()
+      };
+    });
+    if(Object.keys(updates).length === 0){ showMessage('Nessuna riga valida nel CSV', 'error'); return; }
+    db.ref().update(updates).then(()=>{ showMessage('Import completato','ok'); loadAll(); }).catch(e=>showMessage('Errore import: '+e,'error'));
+  };
+  reader.readAsText(file);
+}
+function splitCsvLine(line){
+  const res=[]; let cur=''; let inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c === '"' ){ if(inQ && line[i+1] === '"'){ cur += '"'; i++; continue; } inQ = !inQ; continue; }
+    if(c === ',' && !inQ){ res.push(cur); cur=''; continue; }
+    cur += c;
+  }
+  res.push(cur);
+  return res.map(s=>s.replace(/^"|"$/g,'').trim());
+}
+
+/* ================== Events & init ================== */
+document.addEventListener('DOMContentLoaded', ()=>{
+  // init chart
+  initChart();
+  // default date today
+  const today = new Date(); document.getElementById('date').value = today.toISOString().slice(0,10);
+
+  // bind buttons (touch + click)
+  const addBtn = document.getElementById('addBtn');
+  addBtn.addEventListener('click', addReading);
+  addBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); addReading(); });
+
+  const clearBtn = document.getElementById('clearBtn');
+  clearBtn.addEventListener('click', clearAll);
+  clearBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); clearAll(); });
+
+  const saveBtn = document.getElementById('saveBtn');
+  saveBtn.addEventListener('click', addReading);
+  saveBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); addReading(); });
+
+  const exportBtn = document.getElementById('exportBtn');
+  exportBtn.addEventListener('click', exportCsv);
+  exportBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); exportCsv(); });
+
+  const importBtn = document.getElementById('importBtn');
+  const fileInput = document.getElementById('fileImport');
+  importBtn.addEventListener('click', ()=> fileInput.click());
+  importBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); fileInput.click(); });
+
+  fileInput.addEventListener('change', (ev)=>{
+    const f = ev.target.files && ev.target.files[0];
+    if(f) importCsvHandler(f);
+    fileInput.value = '';
+  });
+
+  // load initial data
+  loadAll();
+});
+</script>
 </body>
 </html>
