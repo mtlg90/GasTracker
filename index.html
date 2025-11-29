@@ -4,27 +4,158 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gas Tracker</title>
-  <!-- Favicon / icona per iPhone -->
+  <!-- Icona (opzionale, metti icon.png nella root) -->
   <link rel="icon" type="image/png" sizes="192x192" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; max-width: 600px; }
-    h1 { text-align: center; }
-    label { display: block; margin-top: 10px; }
-    input { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
-    button { margin-top: 10px; padding: 10px; width: 100%; font-size: 16px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    @media (max-width: 500px) {
-      button { font-size: 14px; padding: 8px; }
-      input { padding: 6px; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f3f4f6;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 4px;
+      font-size: 22px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 16px;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 12px rgba(15,23,42,0.06);
+    }
+    h2 {
+      font-size: 16px;
+      margin: 0 0 8px 0;
+    }
+    label {
+      display: block;
+      margin-top: 8px;
+      font-size: 13px;
+      color: #111827;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px 10px;
+      margin-top: 4px;
+      box-sizing: border-box;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+    }
+    textarea {
+      min-height: 48px;
+      resize: vertical;
+    }
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .col {
+      flex: 1;
+      min-width: 150px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      width: 100%;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: #2563eb;
+      color: #ffffff;
+    }
+    .btn-danger {
+      background: #dc2626;
+      color: #ffffff;
+    }
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+    .btn-inline {
+      width: auto;
+      padding: 6px 10px;
+      font-size: 13px;
+      margin: 0 4px;
+    }
+    #message {
+      font-size: 13px;
+      margin-top: 6px;
+    }
+    .message-ok { color: #16a34a; }
+    .message-error { color: #dc2626; }
+
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 13px;
+    }
+    .stat-item {
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 6px 8px;
+      flex: 1;
+      min-width: 160px;
+    }
+    .stat-label {
+      color: #6b7280;
+      font-size: 12px;
+    }
+    .stat-value {
+      font-weight: 600;
+      color: #111827;
+      margin-top: 2px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+    th, td {
+      border: 1px solid #e5e7eb;
+      padding: 6px;
+      text-align: center;
+    }
+    th {
+      background: #f9fafb;
+    }
+
+    @media (max-width: 600px) {
+      .card { padding: 10px; }
+      h1 { font-size: 20px; }
+      input, textarea { font-size: 16px; }
+      button { font-size: 15px; }
+      table { font-size: 12px; }
     }
   </style>
-  <!-- Firebase SDK -->
+
+  <!-- Firebase SDK compat -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script>
-    // Configurazione Firebase
+    // Configurazione Firebase (la tua)
     const firebaseConfig = {
       apiKey: "AIzaSyCdY2xuLVTBmwUbs-sud5g6W-7eedoI1Qk",
       authDomain: "gastracker-a4bc5.firebaseapp.com",
@@ -34,86 +165,240 @@
       messagingSenderId: "523976617358",
       appId: "1:523976617358:web:1494df462f40813ec548df"
     };
-    // Inizializza Firebase
+
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // Funzione per salvare lettura
+    function showMessage(text, type) {
+      const el = document.getElementById('message');
+      el.textContent = text || '';
+      el.className = '';
+      if (type === 'ok') el.classList.add('message-ok');
+      if (type === 'error') el.classList.add('message-error');
+      if (text) {
+        setTimeout(() => { el.textContent = ''; el.className=''; }, 3000);
+      }
+    }
+
     function saveReading() {
       const date = document.getElementById('date').value;
       const reading = document.getElementById('reading').value;
       const temp = document.getElementById('temp').value;
+      const notes = document.getElementById('notes').value;
+      const priceMp = document.getElementById('price_mp').value;
+      const fixedCharge = document.getElementById('fixed_charge').value;
+
       if (!date || !reading || !temp) {
-        alert("Compila tutti i campi!");
+        showMessage('Compila almeno data, lettura e temperatura.', 'error');
         return;
       }
-      database.ref('readings/' + date).set({
-        reading: reading,
-        temperature: temp,
+
+      // salvo anche i parametri di costo in un nodo separato
+      const updates = {};
+      updates['/readings/' + date] = {
+        reading: parseFloat(reading),
+        temperature: parseFloat(temp),
+        notes: notes || '',
         timestamp: Date.now()
-      }, (error) => {
-        if (error) alert("Errore salvataggio: " + error);
-        else {
-          alert("Lettura salvata online!");
-          loadReadings();
+      };
+      updates['/settings'] = {
+        price_mp: parseFloat(priceMp) || 0,
+        fixed_charge: parseFloat(fixedCharge) || 0
+      };
+
+      database.ref().update(updates, (error) => {
+        if (error) {
+          showMessage('Errore salvataggio: ' + error, 'error');
+        } else {
+          showMessage('Lettura e parametri salvati.', 'ok');
+          loadAll(); // ricarica tabella + statistiche
         }
       });
     }
 
-    // Funzione per caricare letture
-    function loadReadings() {
-      database.ref('readings').once('value', snapshot => {
-        const readings = snapshot.val();
-        const tbody = document.getElementById('readingsBody');
-        tbody.innerHTML = '';
-        if (!readings) return;
-        Object.keys(readings).sort().forEach(date => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${date}</td><td>${readings[date].reading}</td><td>${readings[date].temperature}</td>`;
-          tbody.appendChild(tr);
-        });
+    function clearAllReadings() {
+      if (!confirm('Vuoi davvero cancellare tutte le letture?')) return;
+      database.ref('readings').remove()
+        .then(() => {
+          showMessage('Tutte le letture cancellate.', 'ok');
+          loadAll();
+        })
+        .catch(err => showMessage('Errore: ' + err, 'error'));
+    }
+
+    function loadAll() {
+      // carico sia letture sia settings
+      Promise.all([
+        database.ref('readings').once('value'),
+        database.ref('settings').once('value')
+      ]).then(([snapReadings, snapSettings]) => {
+        const readingsVal = snapReadings.val() || {};
+        const settingsVal = snapSettings.val() || {};
+
+        // ripristina parametri costo nei campi input
+        if (typeof settingsVal.price_mp !== 'undefined') {
+          document.getElementById('price_mp').value = settingsVal.price_mp;
+        }
+        if (typeof settingsVal.fixed_charge !== 'undefined') {
+          document.getElementById('fixed_charge').value = settingsVal.fixed_charge;
+        }
+
+        renderReadings(readingsVal);
+        computeStats(readingsVal, settingsVal);
       });
     }
 
-    // Funzione per cancellare tutte le letture
-    function clearAllReadings() {
-      if (confirm("Vuoi davvero cancellare tutte le letture?")) {
-        database.ref('readings').remove()
-          .then(() => {
-            alert("Dati cancellati");
-            loadReadings();
-          })
-          .catch(err => alert("Errore: " + err));
-      }
+    function renderReadings(readingsObj) {
+      const tbody = document.getElementById('readingsBody');
+      tbody.innerHTML = '';
+
+      const dates = Object.keys(readingsObj);
+      dates.sort(); // crescente
+
+      dates.forEach(date => {
+        const r = readingsObj[date];
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${date}</td>
+          <td>${r.reading}</td>
+          <td>${r.temperature}</td>
+          <td>${r.notes || ''}</td>
+        `;
+        tbody.appendChild(tr);
+      });
     }
 
-    // Carica le letture all'avvio
-    window.onload = loadReadings;
+    function computeStats(readingsObj, settings) {
+      const dates = Object.keys(readingsObj);
+      dates.sort();
+      if (dates.length < 2) {
+        // non ha senso media se non hai almeno 2 letture
+        document.getElementById('avgDaily').textContent = '-';
+        document.getElementById('estMonthlySmc').textContent = '-';
+        document.getElementById('estMonthlyCost').textContent = '-';
+        document.getElementById('total').textContent = dates.length;
+        return;
+      }
+
+      let consumi = [];
+      for (let i = 1; i < dates.length; i++) {
+        const prev = readingsObj[dates[i - 1]].reading;
+        const cur = readingsObj[dates[i]].reading;
+        const diff = cur - prev;
+        if (!isNaN(diff) && diff >= 0) consumi.push(diff);
+      }
+
+      if (consumi.length === 0) {
+        document.getElementById('avgDaily').textContent = '-';
+        document.getElementById('estMonthlySmc').textContent = '-';
+        document.getElementById('estMonthlyCost').textContent = '-';
+        document.getElementById('total').textContent = dates.length;
+        return;
+      }
+
+      const somma = consumi.reduce((a, b) => a + b, 0);
+      const avgDaily = somma / consumi.length;
+      const estMonthly = avgDaily * 30;
+
+      const priceMp = settings.price_mp || 0;
+      const fixedCharge = settings.fixed_charge || 0;
+      const estCost = estMonthly * priceMp + fixedCharge;
+
+      document.getElementById('total').textContent = dates.length;
+      document.getElementById('avgDaily').textContent = avgDaily.toFixed(3) + ' Smc/giorno';
+      document.getElementById('estMonthlySmc').textContent = estMonthly.toFixed(1) + ' Smc/30gg';
+      document.getElementById('estMonthlyCost').textContent = estCost.toFixed(2) + ' € / mese stimato';
+    }
+
+    window.onload = loadAll;
   </script>
 </head>
 <body>
-  <h1>Gas Tracker</h1>
-  <label>Data:
-    <input type="date" id="date">
-  </label>
-  <label>Lettura Smc:
-    <input type="number" id="reading" step="0.01">
-  </label>
-  <label>Temperatura minima esterna (°C):
-    <input type="number" id="temp" step="0.1">
-  </label>
-  <button onclick="saveReading()">Salva Lettura</button>
-  <button onclick="clearAllReadings()" style="background-color: #f44336; color:white;">Cancella Tutto</button>
+  <div class="container">
+    <h1>Gas Tracker</h1>
+    <div class="subtitle">Sincronizzato via Firebase — dati condivisi tra Mac e iPhone</div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Data</th>
-        <th>Lettura (Smc)</th>
-        <th>Temperatura (°C)</th>
-      </tr>
-    </thead>
-    <tbody id="readingsBody"></tbody>
-  </table>
+    <!-- Parametri di costo -->
+    <div class="card">
+      <h2>Parametri di costo</h2>
+      <div class="row">
+        <div class="col">
+          <label>Prezzo materia prima (€/Smc)
+            <input id="price_mp" type="number" step="0.0001" value="0.80">
+          </label>
+        </div>
+        <div class="col">
+          <label>Oneri fissi mensili (€)
+            <input id="fixed_charge" type="number" step="0.01" value="10.00">
+          </label>
+        </div>
+      </div>
+      <div id="message"></div>
+    </div>
+
+    <!-- Nuova lettura -->
+    <div class="card">
+      <h2>Nuova lettura</h2>
+      <label>Data
+        <input type="date" id="date">
+      </label>
+      <div class="row">
+        <div class="col">
+          <label>Lettura contatore (Smc)
+            <input type="number" id="reading" step="0.001" placeholder="es. 1234.567">
+          </label>
+        </div>
+        <div class="col">
+          <label>Temperatura minima esterna (°C)
+            <input type="number" id="temp" step="0.1" placeholder="es. 3.5">
+          </label>
+        </div>
+      </div>
+      <label>Note (opzionale)
+        <textarea id="notes" placeholder="es. weekend fuori casa, ospiti, termosifoni spenti..."></textarea>
+      </label>
+      <button class="btn-primary" onclick="saveReading()">Salva lettura + parametri costo</button>
+      <button class="btn-danger" onclick="clearAllReadings()">Cancella tutte le letture</button>
+    </div>
+
+    <!-- Statistiche -->
+    <div class="card">
+      <h2>Statistiche</h2>
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-label">Numero letture</div>
+          <div class="stat-value" id="total">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Consumo medio giornaliero</div>
+          <div class="stat-value" id="avgDaily">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Stima consumo 30 giorni</div>
+          <div class="stat-value" id="estMonthlySmc">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Costo mensile stimato</div>
+          <div class="stat-value" id="estMonthlyCost">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Registro letture -->
+    <div class="card">
+      <h2>Registro letture</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Lettura (Smc)</th>
+            <th>Temperatura (°C)</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody id="readingsBody"></tbody>
+      </table>
+    </div>
+  </div>
 </body>
 </html>
