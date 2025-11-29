@@ -1,226 +1,119 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="utf-8" />
-  <title>Gas Tracker Locale</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gas Tracker</title>
+  <!-- Favicon / icona per iPhone -->
+  <link rel="icon" type="image/png" sizes="192x192" href="icon.png">
+  <link rel="apple-touch-icon" href="icon.png">
   <style>
-    :root{
-      --bg:#fbfbfc; --card:#ffffff; --muted:#6b7280; --primary:#2563eb;
-      --danger:#dc2626; --ok:#16a34a; --radius:12px; --gap:12px;
-      font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    }
-    body,html{margin:0; height:100%; background:var(--bg);}
-    .wrap{max-width:980px; margin:14px auto; padding:12px;}
-    h1{font-size:20px; margin:0;} .lead{margin:6px 0 12px 0;color:var(--muted);font-size:14px}
-    .card{background:var(--card);border-radius:var(--radius);padding:12px;box-shadow:0 6px 18px rgba(16,24,40,0.04);margin-bottom:var(--gap);}
-    label{display:block;margin-top:8px;font-size:13px;color:#111827}
-    input,textarea,button{font-size:15px;padding:10px 12px;border-radius:10px;border:1px solid #e5e7eb;width:100%;box-sizing:border-box;}
-    textarea{min-height:56px;resize:vertical}
-    .row{display:flex;gap:10px;flex-wrap:wrap}
-    .row .col{flex:1;min-width:140px}
-    button{cursor:pointer;border:none;color:white;background:var(--primary);padding:10px 14px;border-radius:10px;font-weight:600}
-    button.secondary{background:#e5e7eb;color:#111827;}
-    button.danger{background:var(--danger);}
-    button.full{width:100%;}
-    #message{margin-top:8px;font-size:13px}
-    .message-ok{color:var(--ok)}
-    .message-error{color:var(--danger)}
-    table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
-    th,td{padding:8px;border:1px solid #eef2f7;text-align:left}
-    th{background:#fbfdff;color:#111827;font-weight:600}
-
-    @media(max-width:420px){
-      h1{font-size:18px}
-      .lead{font-size:13px}
-      input,textarea{font-size:17px;padding:12px;}
-      button{padding:12px;font-size:16px;border-radius:12px}
-      .row{flex-direction:column}
-      table{display:none}
-      #mobileList{display:block;margin-top:8px;-webkit-overflow-scrolling:touch;}
-      .reading-card{background:linear-gradient(180deg, #fff, #fafafb);border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 8px 20px rgba(16,24,40,0.06);display:flex;gap:10px;align-items:flex-start;}
-      .reading-card .left{min-width:72px;font-weight:700;color:#111827;font-size:15px}
-      .reading-card .meta{color:var(--muted);font-size:13px;}
-      .reading-card .actions{margin-left:auto;display:flex;gap:8px;align-items:center}
-      .small-btn{font-size:14px;padding:8px 10px;border-radius:10px}
-      .stats-bar{position:sticky;bottom:12px;background:linear-gradient(180deg,#fff,#fff);padding:8px 10px;border-radius:12px;display:flex;gap:10px;justify-content:space-between;align-items:center;box-shadow:0 10px 30px rgba(16,24,40,0.08);margin-top:8px;}
-      .stats-bar .stat{font-size:13px;color:#111827;font-weight:600}
+    body { font-family: Arial, sans-serif; margin: 20px; max-width: 600px; }
+    h1 { text-align: center; }
+    label { display: block; margin-top: 10px; }
+    input { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
+    button { margin-top: 10px; padding: 10px; width: 100%; font-size: 16px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    @media (max-width: 500px) {
+      button { font-size: 14px; padding: 8px; }
+      input { padding: 6px; }
     }
   </style>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script>
+    // Configurazione Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCdY2xuLVTBmwUbs-sud5g6W-7eedoI1Qk",
+      authDomain: "gastracker-a4bc5.firebaseapp.com",
+      databaseURL: "https://gastracker-a4bc5-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "gastracker-a4bc5",
+      storageBucket: "gastracker-a4bc5.firebasestorage.app",
+      messagingSenderId: "523976617358",
+      appId: "1:523976617358:web:1494df462f40813ec548df"
+    };
+    // Inizializza Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // Funzione per salvare lettura
+    function saveReading() {
+      const date = document.getElementById('date').value;
+      const reading = document.getElementById('reading').value;
+      const temp = document.getElementById('temp').value;
+      if (!date || !reading || !temp) {
+        alert("Compila tutti i campi!");
+        return;
+      }
+      database.ref('readings/' + date).set({
+        reading: reading,
+        temperature: temp,
+        timestamp: Date.now()
+      }, (error) => {
+        if (error) alert("Errore salvataggio: " + error);
+        else {
+          alert("Lettura salvata online!");
+          loadReadings();
+        }
+      });
+    }
+
+    // Funzione per caricare letture
+    function loadReadings() {
+      database.ref('readings').once('value', snapshot => {
+        const readings = snapshot.val();
+        const tbody = document.getElementById('readingsBody');
+        tbody.innerHTML = '';
+        if (!readings) return;
+        Object.keys(readings).sort().forEach(date => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${date}</td><td>${readings[date].reading}</td><td>${readings[date].temperature}</td>`;
+          tbody.appendChild(tr);
+        });
+      });
+    }
+
+    // Funzione per cancellare tutte le letture
+    function clearAllReadings() {
+      if (confirm("Vuoi davvero cancellare tutte le letture?")) {
+        database.ref('readings').remove()
+          .then(() => {
+            alert("Dati cancellati");
+            loadReadings();
+          })
+          .catch(err => alert("Errore: " + err));
+      }
+    }
+
+    // Carica le letture all'avvio
+    window.onload = loadReadings;
+  </script>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>Gas Tracker Locale</h1>
-      <p class="lead">Offline — iPhone / Mac friendly. Dati salvati solo nel browser.</p>
-    </header>
+  <h1>Gas Tracker</h1>
+  <label>Data:
+    <input type="date" id="date">
+  </label>
+  <label>Lettura Smc:
+    <input type="number" id="reading" step="0.01">
+  </label>
+  <label>Temperatura minima esterna (°C):
+    <input type="number" id="temp" step="0.1">
+  </label>
+  <button onclick="saveReading()">Salva Lettura</button>
+  <button onclick="clearAllReadings()" style="background-color: #f44336; color:white;">Cancella Tutto</button>
 
-    <section class="card">
-      <h3>Parametri di costo</h3>
-      <div class="row">
-        <div class="col">
-          <label>Prezzo materia prima (€/Smc)
-            <input id="price_mp" type="number" step="0.0001" value="0.80">
-          </label>
-        </div>
-        <div class="col">
-          <label>Oneri fissi mensili (€)
-            <input id="fixed_charge" type="number" step="0.01" value="10.00">
-          </label>
-        </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h3>Nuova lettura</h3>
-      <label>Data<input id="date" type="date"></label>
-      <div class="row">
-        <div class="col">
-          <label>Lettura contatore (Smc)<input id="reading" type="number" step="0.001" placeholder="es. 1234.567"></label>
-        </div>
-        <div class="col">
-          <label>Temperatura minima esterna (°C)<input id="min_temp" type="number" step="0.1" placeholder="es. 3.5"></label>
-        </div>
-      </div>
-      <label>Note (opzionale)<textarea id="notes" placeholder="es. weekend fuori casa"></textarea></label>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
-        <button id="saveBtn" class="full">Salva / aggiorna lettura</button>
-        <button id="clearBtn" class="secondary">Cancella TUTTO</button>
-      </div>
-      <div id="message"></div>
-    </section>
-
-    <section class="card">
-      <h3>Statistiche rapide</h3>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;">
-        <div><strong>Record:</strong> <span id="total">0</span></div>
-        <div><strong>Media/giorno:</strong> <span id="avgDaily">-</span></div>
-        <div><strong>Stima 30 gg:</strong> <span id="estMonthlySmc">-</span></div>
-        <div><strong>Costo stimato:</strong> <span id="estMonthlyCost">-</span></div>
-        <div><strong>Temp/Smc:</strong> <span id="tempIndex">-</span></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h3>Registro letture</h3>
-      <table id="table">
-        <thead><tr><th>Data</th><th>Lettura</th><th>Consumo</th><th>Temp</th><th>Note</th><th>Azioni</th></tr></thead>
-        <tbody></tbody>
-      </table>
-      <div id="mobileList"></div>
-      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-        <button id="exportBtn" class="secondary">Esporta CSV</button>
-        <input id="importFile" type="file" accept=".csv" style="display:none">
-        <button id="chooseImport" class="secondary">Seleziona CSV</button>
-        <button id="importBtn" class="secondary">Importa CSV</button>
-      </div>
-    </section>
-  </div>
-
-  <script>
-    const STORAGE_KEY='gasTrackerReadings_v1';
-
-    function loadReadings(){const r=localStorage.getItem(STORAGE_KEY);return r?r.split('||'):[];}
-    function saveReadings(a){localStorage.setItem(STORAGE_KEY,a.join('||'));}
-
-    function showMessage(msg,type){const el=document.getElementById('message');el.textContent=msg;el.className='';if(type==='ok')el.classList.add('message-ok');if(type==='error')el.classList.add('message-error');if(msg)setTimeout(()=>{el.textContent='';},3000);}
-
-    function render(){
-      let readings=loadReadings().map(r=>JSON.parse(r));
-      readings.sort((a,b)=>a.date>b.date?1:-1);
-      const tbody=document.querySelector('#table tbody');tbody.innerHTML='';
-      const mobileList=document.getElementById('mobileList');mobileList.innerHTML='';
-      let consumi=[];
-      for(let i=1;i<readings.length;i++){const prev=parseFloat(readings[i-1].reading);const cur=parseFloat(readings[i].reading);if(!isNaN(prev)&&!isNaN(cur)&&cur>=prev)consumi.push(cur-prev);}
-      const avgDaily=consumi.length?consumi.reduce((a,b)=>a+b,0)/consumi.length:0;
-      const estMonthly=avgDaily*30;
-      const price_mp=parseFloat(document.getElementById('price_mp').value)||0;
-      const fixed=parseFloat(document.getElementById('fixed_charge').value)||0;
-      const cost=estMonthly*price_mp+fixed;
-      document.getElementById('total').textContent=readings.length;
-      document.getElementById('avgDaily').textContent=avgDaily.toFixed(3)+' Smc';
-      document.getElementById('estMonthlySmc').textContent=estMonthly.toFixed(3)+' Smc';
-      document.getElementById('estMonthlyCost').textContent=cost.toFixed(2)+' €';
-      document.getElementById('tempIndex').textContent='-';
-
-      readings.forEach(r=>{
-        const consumo=r.consumo||'-';
-        const tr=document.createElement('tr');
-        tr.innerHTML=`<td>${r.date}</td><td>${r.reading}</td><td>${consumo}</td><td>${r.temp}</td><td>${r.notes||''}</td>
-        <td>
-          <button data-date="${r.date}" data-action="edit">Carica</button>
-          <button data-date="${r.date}" data-action="delete">X</button>
-        </td>`;
-        tbody.appendChild(tr);
-
-        const card=document.createElement('div');card.className='reading-card';
-        card.innerHTML=`<div class="left">${r.date}</div>
-        <div><div style="font-weight:700">${r.reading} Smc</div><div class="meta">Temp: ${r.temp||'-'}°C</div><div style="margin-top:6px;color:var(--muted);font-size:13px">${r.notes||''}</div></div>
-        <div class="actions">
-          <button class="secondary small-btn" data-date="${r.date}" data-action="edit">Carica</button>
-          <button class="danger small-btn" data-date="${r.date}" data-action="delete">X</button>
-        </div>`;
-        mobileList.appendChild(card);
-      });
-
-      document.querySelectorAll('button[data-action]').forEach(btn=>{
-        btn.addEventListener('click',()=>{const date=btn.dataset.date;const action=btn.dataset.action;onRowAction(date,action);});
-      });
-    }
-
-    function onRowAction(date,action){
-      let readings=loadReadings().map(r=>JSON.parse(r));
-      const idx=readings.findIndex(r=>r.date===date);if(idx===-1)return;
-      if(action==='delete'){readings.splice(idx,1);saveReadings(readings.map(r=>JSON.stringify(r)));showMessage('Lettura eliminata','ok');render();return;}
-      if(action==='edit'){const r=readings[idx];document.getElementById('date').value=r.date;document.getElementById('reading').value=r.reading;document.getElementById('min_temp').value=r.temp||'';document.getElementById('notes').value=r.notes||'';showMessage('Lettura caricata','ok');return;}
-    }
-
-    document.getElementById('saveBtn').addEventListener('click',()=>{
-      const date=document.getElementById('date').value;
-      const reading=document.getElementById('reading').value;
-      const temp=document.getElementById('min_temp').value;
-      const notes=document.getElementById('notes').value;
-      if(!date||!reading){showMessage('Data e lettura obbligatorie','error');return;}
-      let readings=loadReadings().map(r=>JSON.parse(r));
-      const idx=readings.findIndex(r=>r.date===date);
-      const obj={date,reading,temp,notes};
-      if(idx>=0)readings[idx]=obj;else readings.push(obj);
-      saveReadings(readings.map(r=>JSON.stringify(r)));
-      showMessage('Lettura salvata','ok');
-      render();
-    });
-
-    document.getElementById('clearBtn').addEventListener('click',()=>{if(confirm('Cancellare tutte le letture?')){localStorage.removeItem(STORAGE_KEY);showMessage('Tutto cancellato','ok');render();}});
-
-    document.getElementById('chooseImport').addEventListener('click',()=>{document.getElementById('importFile').click();});
-    document.getElementById('importBtn').addEventListener('click',()=>{
-      const file=document.getElementById('importFile').files[0];if(!file){showMessage('Seleziona un file CSV','error');return;}
-      const reader=new FileReader();
-      reader.onload=e=>{
-        const text=e.target.result.trim();
-        const lines=text.split('\n');
-        const arr=lines.map(l=>{
-          const [date,reading,temp,notes]=l.split(',');
-          return JSON.stringify({date,reading,temp,notes});
-        });
-        saveReadings(arr);
-        showMessage('CSV importato','ok');
-        render();
-      }
-      reader.readAsText(file);
-    });
-
-    document.getElementById('exportBtn').addEventListener('click',()=>{
-      const data=loadReadings().map(r=>JSON.parse(r));
-      const csv='date,reading,temp,notes\n'+data.map(d=>`${d.date},${d.reading},${d.temp||''},${d.notes||''}`).join('\n');
-      const blob=new Blob([csv],{type:'text/csv'});
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');a.href=url;a.download='gas_readings.csv';a.click();
-      URL.revokeObjectURL(url);
-    });
-
-    render();
-  </script>
+  <table>
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Lettura (Smc)</th>
+        <th>Temperatura (°C)</th>
+      </tr>
+    </thead>
+    <tbody id="readingsBody"></tbody>
+  </table>
 </body>
 </html>
