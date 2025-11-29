@@ -30,16 +30,29 @@
     .row{display:flex;gap:10px}
     button{background:linear-gradient(90deg,var(--accent1),var(--accent2));border:none;padding:10px 14px;border-radius:12px;color:#fff;font-weight:600;cursor:pointer}
     button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-    .stats{display:flex;gap:12px}
-    .stat{flex:1;padding:14px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));text-align:center}
-    .stat .value{font-size:18px;font-weight:700}
-    table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
-    th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left}
+    .stats{display:flex;gap:12px;flex-wrap:wrap}
+    .stat{flex:1;padding:14px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));text-align:center;min-width:140px}
+    .stat .label{font-size:12px;color:var(--muted)}
+    .stat .value{font-size:16px;font-weight:700;margin-top:6px}
+    /* NEW: grid for stats area (3 cols x 2 rows) */
+    .stats-grid{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-auto-rows: minmax(64px, auto);
+      gap: 10px;
+      margin-top: 12px;
+    }
+    @media(max-width:960px){
+      .stats-grid{grid-template-columns:repeat(2,1fr)}
+    }
     @media(max-width:760px){
       .grid{grid-template-columns:1fr}
       .col-span-4,.col-span-8{grid-column:1}
       .mobile-hide{display:none}
+      .stats-grid{grid-template-columns:1fr}
     }
+    table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+    th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left}
     .chart-wrap{height:260px;padding:10px}
     .small{font-size:12px;color:var(--muted)}
     /* touch improvements */
@@ -117,17 +130,21 @@
       </div>
 
       <div class="card col-span-8" aria-labelledby="statsTitle">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <h3 id="statsTitle">Statistiche & grafico</h3>
-            <div class="small">Ultima lettura del giorno usata per calcoli</div>
-          </div>
-          <div class="stats mobile-hide" style="width:55%">
-            <div class="stat"><div class="small">Letture</div><div class="value" id="total">0</div></div>
-            <div class="stat"><div class="small">Media/giorno</div><div class="value" id="avgDaily">-</div></div>
-            <div class="stat"><div class="small">Stima 30gg</div><div class="value" id="estMonthlySmc">-</div></div>
-            <div class="stat"><div class="small">Costo stimato</div><div class="value" id="estMonthlyCost">-</div></div>
-          </div>
+        <!-- TITLE centered -->
+        <div style="text-align:center">
+          <h3 id="statsTitle" style="margin:0">Statistiche & grafico</h3>
+          <div class="small" style="margin-top:6px">Ultima lettura del giorno usata per calcoli</div>
+        </div>
+
+        <!-- NEW: stats grid 3x2 -->
+        <div class="stats-grid" aria-hidden="false">
+          <div class="stat"><div class="label">Letture</div><div class="value" id="total">0</div></div>
+          <div class="stat"><div class="label">Media/giorno (Smc)</div><div class="value" id="avgDaily">-</div></div>
+          <div class="stat"><div class="label">Stima giornaliera (Smc)</div><div class="value" id="estDailySmc">-</div></div>
+
+          <div class="stat"><div class="label">Stima settimanale (Smc)</div><div class="value" id="estWeeklySmc">-</div></div>
+          <div class="stat"><div class="label">Stima 30gg (Smc)</div><div class="value" id="estMonthlySmc">-</div></div>
+          <div class="stat"><div class="label">Costo stimato mensile (€)</div><div class="value" id="estMonthlyCost">-</div></div>
         </div>
 
         <div class="chart-wrap card" style="margin-top:12px">
@@ -139,6 +156,12 @@
           <thead><tr><th>Data</th><th>Ora</th><th>Smc</th><th>Temp</th><th>Note</th><th>Azioni</th></tr></thead>
           <tbody id="readingsBody"></tbody>
         </table>
+
+        <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+          <div class="small">Consumo oggi (intra-day): <strong id="todayConsumption">-</strong></div>
+          <div class="small">Stima giornaliera (€): <strong id="estDailyCost">-</strong></div>
+          <div class="small">Stima settimanale (€): <strong id="estWeeklyCost">-</strong></div>
+        </div>
       </div>
     </div>
   </div>
@@ -233,12 +256,14 @@ function loadAll(){
     .catch(err => showMessage('Errore caricamento: '+err,'error'));
 }
 
+/* ====== UPDATED renderAll: supports intra-day totals and fallbacks ====== */
 function renderAll(readingsObj, settings){
-  // to array with keys
+  // trasformo readingsObj in array con chiave
   const arr = Object.keys(readingsObj).map(k => ({ key: k, ...readingsObj[k] }));
-  arr.sort((a,b)=> (a.timestamp||0) - (b.timestamp||0)); // asc
+  // ordino per timestamp asc (vecchie prima)
+  arr.sort((a,b)=> (a.timestamp||0) - (b.timestamp||0));
 
-  // table
+  // render tabella (mostro le più recenti in cima)
   const tbody = document.getElementById('readingsBody');
   tbody.innerHTML = '';
   arr.slice().reverse().forEach(r=>{
@@ -248,51 +273,88 @@ function renderAll(readingsObj, settings){
     tbody.appendChild(tr);
   });
 
-  // stats: group by date keep last reading per day (max timestamp)
-  const byDate = {};
+  // gruppo letture per data in array ordinati
+  const byDateArrays = {}; // date => [records asc by timestamp]
   arr.forEach(r=>{
-    if(!byDate[r.date] || (r.timestamp||0) > (byDate[r.date].timestamp||0)) byDate[r.date] = r;
+    if(!byDateArrays[r.date]) byDateArrays[r.date] = [];
+    byDateArrays[r.date].push(r);
   });
 
-  const dates = Object.keys(byDate).sort(); // asc
-  if(dates.length < 2){
-    document.getElementById('total').textContent = dates.length;
-    document.getElementById('avgDaily').textContent = '-';
-    document.getElementById('estMonthlySmc').textContent = '-';
-    document.getElementById('estMonthlyCost').textContent = '-';
-    updateChart([], []);
-    return;
-  }
+  // ottengo lastPerDay (ultima lettura del giorno) e firstPerDay (prima lettura del giorno)
+  const dates = Object.keys(byDateArrays).sort(); // asc
+  const lastPerDay = [];
+  const firstPerDay = [];
+  dates.forEach(d=>{
+    const list = byDateArrays[d]; // asc
+    if(list && list.length){
+      firstPerDay.push({ date: d, reading: Number(list[0].reading), timestamp: list[0].timestamp });
+      lastPerDay.push({ date: d, reading: Number(list[list.length-1].reading), timestamp: list[list.length-1].timestamp });
+    }
+  });
 
-  // last readings per day ordered
-  const lastPerDay = dates.map(d => byDate[d]);
-  const diffs = [];
+  // calcolo totali giornalieri (quando possibile) come last - first per lo stesso giorno
+  const dailyTotals = []; // {date, total}
+  dates.forEach(d=>{
+    const list = byDateArrays[d];
+    if(list && list.length >= 2){
+      const total = Number(list[list.length-1].reading) - Number(list[0].reading);
+      if(!isNaN(total) && total >= 0) dailyTotals.push({ date: d, total });
+    }
+    // se c'è solo una lettura nel giorno non possiamo calcolare il consumo "del giorno" da questo metodo
+  });
+
+  // Costruisco i diffs tra giorni basati su lastPerDay (differenze tra ultime letture giornaliere)
+  const dayDiffs = [];
   for(let i=1;i<lastPerDay.length;i++){
     const diff = Number(lastPerDay[i].reading) - Number(lastPerDay[i-1].reading);
-    if(!isNaN(diff) && diff >= 0) diffs.push(diff);
-  }
-  if(diffs.length === 0){
-    document.getElementById('total').textContent = dates.length;
-    document.getElementById('avgDaily').textContent = '-';
-    document.getElementById('estMonthlySmc').textContent = '-';
-    document.getElementById('estMonthlyCost').textContent = '-';
-    updateChart(lastPerDay.map(x=>x.date), lastPerDay.map(x=>x.reading));
-    return;
+    if(!isNaN(diff) && diff >= 0) dayDiffs.push(diff);
   }
 
-  const sum = diffs.reduce((a,b)=>a+b,0);
-  const avgDaily = sum / diffs.length;
-  const estMonthly = avgDaily * 30;
-  const priceMp = settings.price_mp || parseFloat(document.getElementById('price_mp').value) || 0;
-  const fixedCharge = settings.fixed_charge || parseFloat(document.getElementById('fixed_charge').value) || 0;
-  const estCost = estMonthly * priceMp + fixedCharge;
+  // logica per decidere quale dato usare per calcoli:
+  // - se abbiamo dayDiffs (>=1) usiamo quelli per media giornaliera
+  // - altrimenti se non abbiamo dayDiffs ma abbiamo dailyTotals (almeno 1), usiamo la media dei dailyTotals
+  // - altrimenti fallback: prova a usare consumo odierno intra-day (last - first today)
+  let avgDaily = null;
+  if(dayDiffs.length > 0){
+    avgDaily = dayDiffs.reduce((a,b)=>a+b,0) / dayDiffs.length;
+  } else if(dailyTotals.length > 0){
+    avgDaily = dailyTotals.reduce((a,b)=>a+b.total,0) / dailyTotals.length;
+  } else {
+    avgDaily = null; // non disponibile
+  }
 
+  // calcolo stime
+  const today = new Date().toISOString().slice(0,10);
+  const listToday = byDateArrays[today] || [];
+  const todayIntra = (listToday.length >= 2) ? (Number(listToday[listToday.length-1].reading) - Number(listToday[0].reading)) : null;
+
+  const estDailySmc = avgDaily !== null ? avgDaily : (todayIntra !== null ? todayIntra : null);
+  const estWeeklySmc = estDailySmc !== null ? estDailySmc * 7 : null;
+  const estMonthly = estDailySmc !== null ? estDailySmc * 30 : null;
+
+  const priceMp = (settings && settings.price_mp) ? settings.price_mp : parseFloat(document.getElementById('price_mp').value) || 0;
+  const fixedCharge = (settings && settings.fixed_charge) ? settings.fixed_charge : parseFloat(document.getElementById('fixed_charge').value) || 0;
+  const fixedPerDay = fixedCharge / 30;
+
+  const estDailyCost = estDailySmc !== null ? (estDailySmc * priceMp + fixedPerDay) : null;
+  const estWeeklyCost = estWeeklySmc !== null ? (estWeeklySmc * priceMp + fixedPerDay * 7) : null;
+  const estMonthlyCost = estMonthly !== null ? (estMonthly * priceMp + fixedCharge) : null;
+
+  // aggiorno DOM con valori (gestisco i casi null)
   document.getElementById('total').textContent = dates.length;
-  document.getElementById('avgDaily').textContent = avgDaily.toFixed(3) + ' Smc/g';
-  document.getElementById('estMonthlySmc').textContent = estMonthly.toFixed(1) + ' Smc';
-  document.getElementById('estMonthlyCost').textContent = estCost.toFixed(2) + ' €';
+  document.getElementById('avgDaily').textContent = avgDaily !== null ? avgDaily.toFixed(3) + ' Smc/g' : '-';
+  document.getElementById('estDailySmc').textContent = estDailySmc !== null ? estDailySmc.toFixed(3) + ' Smc' : '-';
+  document.getElementById('estWeeklySmc').textContent = estWeeklySmc !== null ? estWeeklySmc.toFixed(3) + ' Smc' : '-';
+  document.getElementById('estMonthlySmc').textContent = estMonthly !== null ? estMonthly.toFixed(1) + ' Smc' : '-';
+  document.getElementById('estMonthlyCost').textContent = estMonthlyCost !== null ? estMonthlyCost.toFixed(2) + ' €' : '-';
+  document.getElementById('estDailyCost').textContent = estDailyCost !== null ? estDailyCost.toFixed(2) + ' €' : '-';
+  document.getElementById('estWeeklyCost').textContent = estWeeklyCost !== null ? estWeeklyCost.toFixed(2) + ' €' : '-';
+  document.getElementById('todayConsumption').textContent = todayIntra !== null ? (todayIntra.toFixed(3) + ' Smc') : '-';
 
-  updateChart(lastPerDay.map(x=>x.date), lastPerDay.map(x=>x.reading));
+  // Aggiorno il chart: uso lastPerDay (etichette: date, valori: last reading)
+  const chartLabels = lastPerDay.map(x => x.date);
+  const chartData = lastPerDay.map(x => Number(x.reading));
+  updateChart(chartLabels, chartData);
 }
 
 /* ================== Chart update ================== */
