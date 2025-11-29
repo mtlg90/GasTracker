@@ -2,505 +2,225 @@
 <html lang="it">
 <head>
   <meta charset="utf-8" />
-  <title>Gas Tracker Locale — Mobile & Desktop</title>
+  <title>Gas Tracker Locale</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <style>
     :root{
-      --bg: #fbfbfc;
-      --card: #ffffff;
-      --muted: #6b7280;
-      --primary: #2563eb;
-      --danger: #dc2626;
-      --ok: #16a34a;
-      --radius: 12px;
-      --gap: 12px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      color-scheme: light;
+      --bg:#fbfbfc; --card:#ffffff; --muted:#6b7280; --primary:#2563eb;
+      --danger:#dc2626; --ok:#16a34a; --radius:12px; --gap:12px;
+      font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
-    html,body{height:100%; margin:0; background:var(--bg); -webkit-text-size-adjust:100%;}
+    body,html{margin:0; height:100%; background:var(--bg);}
     .wrap{max-width:980px; margin:14px auto; padding:12px;}
-    header{display:flex; align-items:center; gap:12px; margin-bottom:8px;}
-    h1{font-size:20px; margin:0;}
-    p.lead{margin:6px 0 12px 0; color:var(--muted); font-size:14px}
+    h1{font-size:20px; margin:0;} .lead{margin:6px 0 12px 0;color:var(--muted);font-size:14px}
+    .card{background:var(--card);border-radius:var(--radius);padding:12px;box-shadow:0 6px 18px rgba(16,24,40,0.04);margin-bottom:var(--gap);}
+    label{display:block;margin-top:8px;font-size:13px;color:#111827}
+    input,textarea,button{font-size:15px;padding:10px 12px;border-radius:10px;border:1px solid #e5e7eb;width:100%;box-sizing:border-box;}
+    textarea{min-height:56px;resize:vertical}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row .col{flex:1;min-width:140px}
+    button{cursor:pointer;border:none;color:white;background:var(--primary);padding:10px 14px;border-radius:10px;font-weight:600}
+    button.secondary{background:#e5e7eb;color:#111827;}
+    button.danger{background:var(--danger);}
+    button.full{width:100%;}
+    #message{margin-top:8px;font-size:13px}
+    .message-ok{color:var(--ok)}
+    .message-error{color:var(--danger)}
+    table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+    th,td{padding:8px;border:1px solid #eef2f7;text-align:left}
+    th{background:#fbfdff;color:#111827;font-weight:600}
 
-    .card{
-      background:var(--card);
-      border-radius:var(--radius);
-      padding:12px;
-      box-shadow: 0 6px 18px rgba(16,24,40,0.04);
-      margin-bottom:var(--gap);
-      -webkit-overflow-scrolling: touch;
-    }
-    label{display:block; margin-top:8px; font-size:13px; color:#111827}
-    input[type="number"], input[type="date"], textarea, button {
-      font-size:15px; padding:10px 12px; border-radius:10px; border:1px solid #e5e7eb; width:100%; box-sizing:border-box;
-    }
-    textarea{min-height:56px; resize:vertical}
-    .row{display:flex; gap:10px; flex-wrap:wrap}
-    .row .col{flex:1; min-width:140px}
-    button { cursor:pointer; border:none; color:white; background:var(--primary); padding:10px 14px; border-radius:10px; font-weight:600 }
-    button.secondary { background:#e5e7eb; color:#111827; box-shadow:none; }
-    button.danger { background:var(--danger); }
-    button.full { width:100%; }
-    #message{margin-top:8px; font-size:13px}
-    .message-ok{ color:var(--ok) }
-    .message-error{ color:var(--danger) }
-
-    /* Table desktop */
-    table{width:100%; border-collapse:collapse; font-size:13px; margin-top:6px}
-    th,td{padding:8px; border:1px solid #eef2f7; text-align:left}
-    th{background:#fbfdff; color:#111827; font-weight:600}
-
-    /* Mobile specifics (iPhone 13 Pro ~ 390px width) */
-    @media (max-width: 420px) {
+    @media(max-width:420px){
       h1{font-size:18px}
       .lead{font-size:13px}
-      input[type="number"], input[type="date"], textarea { font-size:17px; padding:12px; }
-      button { padding:12px; font-size:16px; border-radius:12px }
+      input,textarea{font-size:17px;padding:12px;}
+      button{padding:12px;font-size:16px;border-radius:12px}
       .row{flex-direction:column}
-      table { display:none } /* hide wide table on mobile */
-      /* mobile card list */
-      #mobileList { display:block; margin-top:8px; -webkit-overflow-scrolling: touch; }
-      .reading-card {
-        background: linear-gradient(180deg, rgba(255,255,255,1), rgba(250,250,251,1));
-        border-radius:12px;
-        padding:12px;
-        margin-bottom:10px;
-        box-shadow: 0 8px 20px rgba(16,24,40,0.06);
-        display:flex;
-        gap:10px;
-        align-items:flex-start;
-      }
-      .reading-card .left { min-width:72px; font-weight:700; color:#111827; font-size:15px }
-      .reading-card .meta { color:var(--muted); font-size:13px; }
-      .reading-card .actions { margin-left:auto; display:flex; gap:8px; align-items:center }
-      .small-btn { font-size:14px; padding:8px 10px; border-radius:10px }
-      /* sticky footer quick stats */
-      .stats-bar {
-        position: sticky;
-        bottom: 12px;
-        background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.95));
-        padding:8px 10px;
-        border-radius:12px;
-        display:flex;
-        gap:10px;
-        justify-content:space-between;
-        align-items:center;
-        box-shadow: 0 10px 30px rgba(16,24,40,0.08);
-        margin-top:8px;
-      }
-      .stats-bar .stat { font-size:13px; color:#111827; font-weight:600 }
-    }
-
-    /* larger desktop tweaks */
-    @media (min-width: 900px){
-      h1{font-size:24px}
-      .wrap{padding:24px}
+      table{display:none}
+      #mobileList{display:block;margin-top:8px;-webkit-overflow-scrolling:touch;}
+      .reading-card{background:linear-gradient(180deg, #fff, #fafafb);border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 8px 20px rgba(16,24,40,0.06);display:flex;gap:10px;align-items:flex-start;}
+      .reading-card .left{min-width:72px;font-weight:700;color:#111827;font-size:15px}
+      .reading-card .meta{color:var(--muted);font-size:13px;}
+      .reading-card .actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+      .small-btn{font-size:14px;padding:8px 10px;border-radius:10px}
+      .stats-bar{position:sticky;bottom:12px;background:linear-gradient(180deg,#fff,#fff);padding:8px 10px;border-radius:12px;display:flex;gap:10px;justify-content:space-between;align-items:center;box-shadow:0 10px 30px rgba(16,24,40,0.08);margin-top:8px;}
+      .stats-bar .stat{font-size:13px;color:#111827;font-weight:600}
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <div>
-        <h1>Gas Tracker Locale</h1>
-        <p class="lead">Offline — iPhone / Mac friendly. Dati salvati solo nel browser.</p>
-      </div>
+      <h1>Gas Tracker Locale</h1>
+      <p class="lead">Offline — iPhone / Mac friendly. Dati salvati solo nel browser.</p>
     </header>
 
-    <section class="card" aria-labelledby="costsTitle">
-      <h3 id="costsTitle">Parametri di costo</h3>
+    <section class="card">
+      <h3>Parametri di costo</h3>
       <div class="row">
         <div class="col">
           <label>Prezzo materia prima (€/Smc)
-            <input id="price_mp" type="number" step="0.0001" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" value="0.80" />
+            <input id="price_mp" type="number" step="0.0001" value="0.80">
           </label>
         </div>
         <div class="col">
           <label>Oneri fissi mensili (€)
-            <input id="fixed_charge" type="number" step="0.01" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" value="10.00" />
+            <input id="fixed_charge" type="number" step="0.01" value="10.00">
           </label>
         </div>
       </div>
-      <small style="color:var(--muted)">Inserisci i valori dalla tua bolletta (Materia Gas Naturale / Oneri).</small>
     </section>
 
-    <section class="card" aria-labelledby="newReadTitle">
-      <h3 id="newReadTitle">Nuova lettura</h3>
-      <label>Data
-        <input id="date" type="date" />
-      </label>
-
+    <section class="card">
+      <h3>Nuova lettura</h3>
+      <label>Data<input id="date" type="date"></label>
       <div class="row">
         <div class="col">
-          <label>Lettura contatore (Smc)
-            <input id="reading" type="number" step="0.001" inputmode="decimal" placeholder="es. 1234.567" />
-          </label>
+          <label>Lettura contatore (Smc)<input id="reading" type="number" step="0.001" placeholder="es. 1234.567"></label>
         </div>
         <div class="col">
-          <label>Temperatura minima esterna (°C)
-            <input id="min_temp" type="number" step="0.1" inputmode="decimal" placeholder="es. 3.5" />
-          </label>
+          <label>Temperatura minima esterna (°C)<input id="min_temp" type="number" step="0.1" placeholder="es. 3.5"></label>
         </div>
       </div>
-
-      <label>Note (opzionale)
-        <textarea id="notes" placeholder="es. 'weekend fuori casa'"></textarea>
-      </label>
-
-      <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap">
+      <label>Note (opzionale)<textarea id="notes" placeholder="es. weekend fuori casa"></textarea></label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
         <button id="saveBtn" class="full">Salva / aggiorna lettura</button>
         <button id="clearBtn" class="secondary">Cancella TUTTO</button>
       </div>
-      <div id="message" aria-live="polite"></div>
+      <div id="message"></div>
     </section>
 
-    <section class="card" aria-labelledby="statsTitle">
-      <h3 id="statsTitle">Statistiche rapide</h3>
-      <div style="display:flex; gap:12px; flex-wrap:wrap">
-        <div style="min-width:120px"><strong>Record:</strong> <span id="total">0</span></div>
-        <div style="min-width:150px"><strong>Media/giorno:</strong> <span id="avgDaily">-</span></div>
-        <div style="min-width:150px"><strong>Stima (30 gg):</strong> <span id="estMonthlySmc">-</span></div>
-        <div style="min-width:150px"><strong>Costo stimato:</strong> <span id="estMonthlyCost">-</span></div>
-        <div style="min-width:120px"><strong>Temp/Smc:</strong> <span id="tempIndex">-</span></div>
+    <section class="card">
+      <h3>Statistiche rapide</h3>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <div><strong>Record:</strong> <span id="total">0</span></div>
+        <div><strong>Media/giorno:</strong> <span id="avgDaily">-</span></div>
+        <div><strong>Stima 30 gg:</strong> <span id="estMonthlySmc">-</span></div>
+        <div><strong>Costo stimato:</strong> <span id="estMonthlyCost">-</span></div>
+        <div><strong>Temp/Smc:</strong> <span id="tempIndex">-</span></div>
       </div>
     </section>
 
-    <section class="card" aria-labelledby="logTitle">
-      <h3 id="logTitle">Registro letture</h3>
-      <small style="color:var(--muted)">Il consumo giornaliero è la differenza con la lettura precedente.</small>
-
-      <!-- Desktop table (hidden on small screens) -->
-      <table id="table" role="table" aria-label="Registro letture">
-        <thead>
-          <tr><th>Data</th><th>Lettura</th><th>Consumo</th><th>Temp min</th><th>Note</th><th>Azioni</th></tr>
-        </thead>
+    <section class="card">
+      <h3>Registro letture</h3>
+      <table id="table">
+        <thead><tr><th>Data</th><th>Lettura</th><th>Consumo</th><th>Temp</th><th>Note</th><th>Azioni</th></tr></thead>
         <tbody></tbody>
       </table>
-
-      <!-- Mobile list (shown on small screens via JS) -->
-      <div id="mobileList" style="display:none"></div>
-
-      <!-- Export / Import controls -->
-      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+      <div id="mobileList"></div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
         <button id="exportBtn" class="secondary">Esporta CSV</button>
-        <label style="display:inline-block; margin:0;">
-          <input id="importFile" type="file" accept=".csv,text/csv" style="display:none">
-          <button id="chooseImport" class="secondary">Seleziona CSV</button>
-        </label>
+        <input id="importFile" type="file" accept=".csv" style="display:none">
+        <button id="chooseImport" class="secondary">Seleziona CSV</button>
         <button id="importBtn" class="secondary">Importa CSV</button>
-        <small style="align-self:center; color:var(--muted)">Formato: date,reading,temp,notes</small>
       </div>
-
     </section>
-
-    <!-- Sticky stats bar for mobile -->
-    <div id="mobileStats" class="stats-bar" style="display:none">
-      <div class="stat"><small>Media/g</small><div id="mAvg" style="font-weight:700"></div></div>
-      <div class="stat"><small>30gg</small><div id="m30" style="font-weight:700"></div></div>
-      <div><button id="exportBtn2" class="secondary small-btn">Esporta CSV</button></div>
-    </div>
-
   </div>
 
-<script>
-/* ================= STORAGE & UTILS ================= */
-const STORAGE_KEY = 'gasTrackerReadings_v1';
-const COST_KEY = 'gasTrackerCosts_v1';
+  <script>
+    const STORAGE_KEY='gasTrackerReadings_v1';
 
-function loadReadings(){ try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : []; } catch(e){ console.error(e); return []; } }
-function saveReadings(a){ localStorage.setItem(STORAGE_KEY, JSON.stringify(a)); }
-function loadCosts(){ try { const r = localStorage.getItem(COST_KEY); return r ? JSON.parse(r) : null; } catch { return null; } }
-function saveCosts(price_mp, fixed_charge){ localStorage.setItem(COST_KEY, JSON.stringify({ price_mp, fixed_charge })); }
+    function loadReadings(){const r=localStorage.getItem(STORAGE_KEY);return r?r.split('||'):[];}
+    function saveReadings(a){localStorage.setItem(STORAGE_KEY,a.join('||'));}
 
-function showMessage(msg, type){
-  const el = document.getElementById('message');
-  el.textContent = msg || '';
-  el.className = '';
-  if(type === 'ok') el.classList.add('message-ok');
-  if(type === 'error') el.classList.add('message-error');
-  if(msg) setTimeout(()=>{ el.textContent=''; }, 3000);
-}
+    function showMessage(msg,type){const el=document.getElementById('message');el.textContent=msg;el.className='';if(type==='ok')el.classList.add('message-ok');if(type==='error')el.classList.add('message-error');if(msg)setTimeout(()=>{el.textContent='';},3000);}
 
-function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
+    function render(){
+      let readings=loadReadings().map(r=>JSON.parse(r));
+      readings.sort((a,b)=>a.date>b.date?1:-1);
+      const tbody=document.querySelector('#table tbody');tbody.innerHTML='';
+      const mobileList=document.getElementById('mobileList');mobileList.innerHTML='';
+      let consumi=[];
+      for(let i=1;i<readings.length;i++){const prev=parseFloat(readings[i-1].reading);const cur=parseFloat(readings[i].reading);if(!isNaN(prev)&&!isNaN(cur)&&cur>=prev)consumi.push(cur-prev);}
+      const avgDaily=consumi.length?consumi.reduce((a,b)=>a+b,0)/consumi.length:0;
+      const estMonthly=avgDaily*30;
+      const price_mp=parseFloat(document.getElementById('price_mp').value)||0;
+      const fixed=parseFloat(document.getElementById('fixed_charge').value)||0;
+      const cost=estMonthly*price_mp+fixed;
+      document.getElementById('total').textContent=readings.length;
+      document.getElementById('avgDaily').textContent=avgDaily.toFixed(3)+' Smc';
+      document.getElementById('estMonthlySmc').textContent=estMonthly.toFixed(3)+' Smc';
+      document.getElementById('estMonthlyCost').textContent=cost.toFixed(2)+' €';
+      document.getElementById('tempIndex').textContent='-';
 
-/* ================= RENDER ================= */
-function render(){
-  let readings = loadReadings();
-  // sort ascending for calculations
-  readings.sort((a,b) => a.date > b.date ? 1 : -1);
+      readings.forEach(r=>{
+        const consumo=r.consumo||'-';
+        const tr=document.createElement('tr');
+        tr.innerHTML=`<td>${r.date}</td><td>${r.reading}</td><td>${consumo}</td><td>${r.temp}</td><td>${r.notes||''}</td>
+        <td>
+          <button data-date="${r.date}" data-action="edit">Carica</button>
+          <button data-date="${r.date}" data-action="delete">X</button>
+        </td>`;
+        tbody.appendChild(tr);
 
-  // compute daily consumption (diff between successive readings)
-  const consumi = [];
-  for(let i=1;i<readings.length;i++){
-    const prev = parseFloat(readings[i-1].reading);
-    const cur = parseFloat(readings[i].reading);
-    if(!isNaN(prev) && !isNaN(cur) && cur>=prev){
-      consumi.push({ date: readings[i].date, consumo: cur - prev, temp: readings[i].temp });
+        const card=document.createElement('div');card.className='reading-card';
+        card.innerHTML=`<div class="left">${r.date}</div>
+        <div><div style="font-weight:700">${r.reading} Smc</div><div class="meta">Temp: ${r.temp||'-'}°C</div><div style="margin-top:6px;color:var(--muted);font-size:13px">${r.notes||''}</div></div>
+        <div class="actions">
+          <button class="secondary small-btn" data-date="${r.date}" data-action="edit">Carica</button>
+          <button class="danger small-btn" data-date="${r.date}" data-action="delete">X</button>
+        </div>`;
+        mobileList.appendChild(card);
+      });
+
+      document.querySelectorAll('button[data-action]').forEach(btn=>{
+        btn.addEventListener('click',()=>{const date=btn.dataset.date;const action=btn.dataset.action;onRowAction(date,action);});
+      });
     }
-  }
 
-  const avgDaily = consumi.length ? (consumi.reduce((s,c)=>s+c.consumo,0)/consumi.length) : 0;
-  const estMonthlySmc = avgDaily * 30;
-  const price_mp = parseFloat(document.getElementById('price_mp').value) || 0;
-  const fixed_charge = parseFloat(document.getElementById('fixed_charge').value) || 0;
-  const estMonthlyCost = estMonthlySmc * price_mp + fixed_charge;
+    function onRowAction(date,action){
+      let readings=loadReadings().map(r=>JSON.parse(r));
+      const idx=readings.findIndex(r=>r.date===date);if(idx===-1)return;
+      if(action==='delete'){readings.splice(idx,1);saveReadings(readings.map(r=>JSON.stringify(r)));showMessage('Lettura eliminata','ok');render();return;}
+      if(action==='edit'){const r=readings[idx];document.getElementById('date').value=r.date;document.getElementById('reading').value=r.reading;document.getElementById('min_temp').value=r.temp||'';document.getElementById('notes').value=r.notes||'';showMessage('Lettura caricata','ok');return;}
+    }
 
-  const temps = consumi.map(c=>parseFloat(c.temp)).filter(t=>!isNaN(t));
-  const tempAvg = temps.length ? temps.reduce((s,x)=>s+x,0)/temps.length : null;
-  const tempIndex = (tempAvg !== null && avgDaily>0) ? (tempAvg/avgDaily).toFixed(3) : '-';
-
-  // stats
-  document.getElementById('total').textContent = readings.length;
-  document.getElementById('avgDaily').textContent = avgDaily ? avgDaily.toFixed(3)+' Smc' : '-';
-  document.getElementById('estMonthlySmc').textContent = estMonthlySmc ? estMonthlySmc.toFixed(3)+' Smc' : '-';
-  document.getElementById('estMonthlyCost').textContent = estMonthlyCost ? estMonthlyCost.toFixed(2)+' €' : '-';
-  document.getElementById('tempIndex').textContent = tempIndex;
-
-  // table (desktop)
-  const tbody = document.querySelector('#table tbody');
-  tbody.innerHTML = '';
-  const consumoMap = {};
-  consumi.forEach(c=> consumoMap[c.date] = c.consumo);
-  const sortedDesc = [...readings].sort((a,b)=> a.date > b.date ? -1 : 1);
-  for(const r of sortedDesc){
-    const tr = document.createElement('tr');
-    const consumo = consumoMap[r.date] !== undefined ? consumoMap[r.date].toFixed(3) : '-';
-    tr.innerHTML = `
-      <td>${r.date}</td>
-      <td>${parseFloat(r.reading).toFixed(3)}</td>
-      <td>${consumo}</td>
-      <td>${r.temp !== '' ? r.temp : '-'}</td>
-      <td>${escapeHtml(r.notes || '')}</td>
-      <td>
-        <button class="secondary" data-date="${r.date}" data-action="edit">Carica</button>
-        <button class="danger" data-date="${r.date}" data-action="delete">X</button>
-      </td>`;
-    tbody.appendChild(tr);
-  }
-  tbody.querySelectorAll('button').forEach(btn => btn.addEventListener('click', onRowAction));
-
-  // mobile list
-  const mobileList = document.getElementById('mobileList');
-  mobileList.innerHTML = '';
-  for(const r of sortedDesc){
-    const consumo = consumoMap[r.date] !== undefined ? consumoMap[r.date].toFixed(3)+' Smc' : '-';
-    const card = document.createElement('div');
-    card.className = 'reading-card';
-    card.innerHTML = `
-      <div class="left">${r.date}</div>
-      <div>
-        <div style="font-weight:700">${parseFloat(r.reading).toFixed(3)} Smc</div>
-        <div class="meta">Consumo: ${consumo} • Temp: ${r.temp !== '' ? r.temp+'°C' : '-'} </div>
-        <div style="margin-top:6px; color:var(--muted); font-size:13px">${escapeHtml(r.notes||'')}</div>
-      </div>
-      <div class="actions">
-        <button class="secondary small-btn" data-date="${r.date}" data-action="edit">Carica</button>
-        <button class="danger small-btn" data-date="${r.date}" data-action="delete">X</button>
-      </div>`;
-    mobileList.appendChild(card);
-  }
-  mobileList.querySelectorAll('button').forEach(b => b.addEventListener('click', onRowAction));
-
-  // responsive toggles
-  const isMobile = window.innerWidth <= 420;
-  document.getElementById('mobileList').style.display = isMobile ? 'block' : 'none';
-  document.getElementById('table').style.display = isMobile ? 'none' : 'table';
-  document.getElementById('mobileStats').style.display = isMobile ? 'flex' : 'none';
-  document.getElementById('mAvg').textContent = avgDaily ? avgDaily.toFixed(3)+' Smc' : '-';
-  document.getElementById('m30').textContent = estMonthlySmc ? estMonthlySmc.toFixed(3)+' Smc' : '-';
-}
-
-/* ================= EVENTS ================= */
-function onRowAction(e){
-  const btn = e.target;
-  const date = btn.dataset.date;
-  const action = btn.dataset.action;
-  let readings = loadReadings();
-  const idx = readings.findIndex(r => r.date === date);
-  if(idx === -1) return;
-  if(action === 'delete'){
-    if(!confirm(`Eliminare la lettura del ${date}?`)) return;
-    readings.splice(idx,1);
-    saveReadings(readings);
-    showMessage('Lettura eliminata','ok');
-    render();
-    return;
-  }
-  if(action === 'edit'){
-    const r = readings[idx];
-    document.getElementById('date').value = r.date;
-    document.getElementById('reading').value = r.reading;
-    document.getElementById('min_temp').value = r.temp;
-    document.getElementById('notes').value = r.notes;
-    showMessage('Lettura caricata nel form. Modifica e premi "Salva / aggiorna".','ok');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    return;
-  }
-}
-
-document.getElementById('saveBtn').addEventListener('click', ()=>{
-  const date = document.getElementById('date').value;
-  const reading = document.getElementById('reading').value;
-  const temp = document.getElementById('min_temp').value || '';
-  const notes = document.getElementById('notes').value || '';
-  if(!date || !reading){ showMessage('Inserisci almeno data e lettura contatore.','error'); return; }
-  let readings = loadReadings();
-  const existing = readings.findIndex(r => r.date === date);
-  if(existing >= 0) readings[existing] = { date, reading, temp, notes };
-  else readings.push({ date, reading, temp, notes });
-  saveReadings(readings);
-  // save costs
-  const price_mp = parseFloat(document.getElementById('price_mp').value) || 0;
-  const fixed_charge = parseFloat(document.getElementById('fixed_charge').value) || 0;
-  saveCosts(price_mp, fixed_charge);
-  showMessage('Lettura salvata/aggiornata.','ok');
-  document.getElementById('reading').value = '';
-  document.getElementById('notes').value = '';
-  render();
-});
-
-document.getElementById('clearBtn').addEventListener('click', ()=>{
-  if(!confirm('Vuoi davvero cancellare TUTTE le letture salvate nel browser?')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  showMessage('Tutte le letture sono state cancellate.','ok');
-  render();
-});
-
-/* ================= EXPORT CSV ================= */
-function buildCsv(readings){
-  let csv = 'date,reading,temp,notes\n';
-  readings.forEach(r=>{
-    const notes = (r.notes || '').replace(/"/g,'""');
-    csv += `${r.date},${r.reading},${r.temp},"${notes}"\n`;
-  });
-  return csv;
-}
-
-document.getElementById('exportBtn').addEventListener('click', ()=>{
-  const readings = loadReadings().sort((a,b)=> a.date > b.date ? -1 : 1);
-  if(readings.length === 0){ showMessage('Nessuna lettura da esportare.','error'); return; }
-  const csv = buildCsv(readings);
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'gas_readings.csv';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-  showMessage('CSV generato. Controlla i download / la condivisione.', 'ok');
-});
-// mobile sticky export button
-document.getElementById('exportBtn2').addEventListener('click', ()=> document.getElementById('exportBtn').click());
-
-/* ================= IMPORT CSV ================= */
-// choose file button opens file picker
-document.getElementById('chooseImport').addEventListener('click', (e)=>{
-  e.preventDefault();
-  document.getElementById('importFile').click();
-});
-
-// actual import action
-document.getElementById('importBtn').addEventListener('click', ()=>{
-  const input = document.getElementById('importFile');
-  if (!input.files || input.files.length === 0) {
-    alert('Seleziona prima un file CSV dal tuo dispositivo.');
-    return;
-  }
-  const f = input.files[0];
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    try {
-      const text = ev.target.result;
-      const parsed = parseCsvToRecords(text);
-      if (parsed.length === 0) { alert('CSV vuoto o non valido'); return; }
-      mergeAndSaveRecords(parsed);
-      showMessage('Import eseguito: ' + parsed.length + ' righe importate', 'ok');
+    document.getElementById('saveBtn').addEventListener('click',()=>{
+      const date=document.getElementById('date').value;
+      const reading=document.getElementById('reading').value;
+      const temp=document.getElementById('min_temp').value;
+      const notes=document.getElementById('notes').value;
+      if(!date||!reading){showMessage('Data e lettura obbligatorie','error');return;}
+      let readings=loadReadings().map(r=>JSON.parse(r));
+      const idx=readings.findIndex(r=>r.date===date);
+      const obj={date,reading,temp,notes};
+      if(idx>=0)readings[idx]=obj;else readings.push(obj);
+      saveReadings(readings.map(r=>JSON.stringify(r)));
+      showMessage('Lettura salvata','ok');
       render();
-      // reset file input so same file can be selected again if needed
-      input.value = '';
-    } catch (err) {
-      console.error(err);
-      alert('Errore parsing CSV: ' + err.message);
-    }
-  };
-  reader.readAsText(f);
-});
+    });
 
-// parse CSV minimalista: assume header date,reading,temp,notes (but tolerant)
-function parseCsvToRecords(csvText) {
-  const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length>0);
-  if (lines.length === 0) return [];
-  let start = 0;
-  const first = lines[0].toLowerCase();
-  if (first.includes('date') && first.includes('reading')) start = 1;
-  const out = [];
-  for (let i = start; i < lines.length; i++) {
-    const row = splitCsvLineSimple(lines[i]);
-    if (row.length < 2) continue;
-    const date = row[0];
-    const reading = row[1];
-    const temp = row[2] || '';
-    const notes = (row[3] || '').replace(/^"|"$/g, '');
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      console.warn('Riga CSV ignorata per data non valida:', lines[i]);
-      continue;
-    }
-    out.push({ date, reading, temp, notes });
-  }
-  return out;
-}
+    document.getElementById('clearBtn').addEventListener('click',()=>{if(confirm('Cancellare tutte le letture?')){localStorage.removeItem(STORAGE_KEY);showMessage('Tutto cancellato','ok');render();}});
 
-// simple CSV splitter that supports quoted fields and "" escape
-function splitCsvLineSimple(line) {
-  const res = [];
-  let cur = '';
-  let inQuote = false;
-  for (let i=0;i<line.length;i++) {
-    const c = line[i];
-    if (c === '"' ) {
-      if (inQuote && i+1<line.length && line[i+1] === '"') { cur += '"'; i++; continue; }
-      inQuote = !inQuote;
-      continue;
-    }
-    if (c === ',' && !inQuote) {
-      res.push(cur);
-      cur = '';
-      continue;
-    }
-    cur += c;
-  }
-  res.push(cur);
-  return res.map(s => s.trim());
-}
+    document.getElementById('chooseImport').addEventListener('click',()=>{document.getElementById('importFile').click();});
+    document.getElementById('importBtn').addEventListener('click',()=>{
+      const file=document.getElementById('importFile').files[0];if(!file){showMessage('Seleziona un file CSV','error');return;}
+      const reader=new FileReader();
+      reader.onload=e=>{
+        const text=e.target.result.trim();
+        const lines=text.split('\n');
+        const arr=lines.map(l=>{
+          const [date,reading,temp,notes]=l.split(',');
+          return JSON.stringify({date,reading,temp,notes});
+        });
+        saveReadings(arr);
+        showMessage('CSV importato','ok');
+        render();
+      }
+      reader.readAsText(file);
+    });
 
-// merge imported records with existing (import wins on same date)
-function mergeAndSaveRecords(imported) {
-  const existing = loadReadings();
-  const map = {};
-  existing.forEach(r => map[r.date] = r);
-  imported.forEach(r => { map[r.date] = { date: r.date, reading: r.reading, temp: r.temp, notes: r.notes }; });
-  const merged = Object.values(map).sort((a,b)=> a.date > b.date ? 1 : -1); // asc
-  saveReadings(merged);
-}
+    document.getElementById('exportBtn').addEventListener('click',()=>{
+      const data=loadReadings().map(r=>JSON.parse(r));
+      const csv='date,reading,temp,notes\n'+data.map(d=>`${d.date},${d.reading},${d.temp||''},${d.notes||''}`).join('\n');
+      const blob=new Blob([csv],{type:'text/csv'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download='gas_readings.csv';a.click();
+      URL.revokeObjectURL(url);
+    });
 
-/* =============== INIT =============== */
-(function init(){
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth()+1).padStart(2,'0');
-  const dd = String(today.getDate()).padStart(2,'0');
-  document.getElementById('date').value = `${yyyy}-${mm}-${dd}`;
-
-  const costs = loadCosts();
-  if(costs){ document.getElementById('price_mp').value = costs.price_mp; document.getElementById('fixed_charge').value = costs.fixed_charge; }
-
-  window.addEventListener('resize', () => { render(); });
-  render();
-})();
-</script>
+    render();
+  </script>
 </body>
 </html>
