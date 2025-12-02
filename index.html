@@ -3,8 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Gas Tracker — Modern</title>
-  <link rel="icon" href="icon.png">
+  <title>GAS T. — Gas Tracker</title>
+
+  <!-- Icons (assicurati di caricare i file in repository root) -->
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icon-16.png">
+  <link rel="mask-icon" href="icon.svg" color="#7c3aed">
+  <meta name="theme-color" content="#071023">
+
   <style>
     /* Modern dark UI */
     :root{
@@ -16,8 +24,8 @@
     .container{max-width:1100px;margin:20px auto;padding:18px}
     header{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .brand{display:flex;align-items:center;gap:12px}
-    .logo{width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent1),var(--accent2))}
-    .logo svg{width:26px;height:26px}
+    .logo-box{display:flex;align-items:center;gap:12px}
+    .logo-img{height:46px; width:auto; display:block}
     h1{font-size:20px;margin:0}
     .subtitle{color:var(--muted);font-size:13px}
     .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:var(--gap);margin-top:18px}
@@ -34,29 +42,21 @@
     .stat{flex:1;padding:14px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));text-align:center;min-width:140px}
     .stat .label{font-size:12px;color:var(--muted)}
     .stat .value{font-size:16px;font-weight:700;margin-top:6px}
-    /* NEW: grid for stats area (3 cols x 2 rows) */
-    .stats-grid{
-      display:grid;
-      grid-template-columns: repeat(3, 1fr);
-      grid-auto-rows: minmax(64px, auto);
-      gap: 10px;
-      margin-top: 12px;
-    }
-    @media(max-width:960px){
-      .stats-grid{grid-template-columns:repeat(2,1fr)}
-    }
-    @media(max-width:760px){
-      .grid{grid-template-columns:1fr}
-      .col-span-4,.col-span-8{grid-column:1}
-      .mobile-hide{display:none}
-      .stats-grid{grid-template-columns:1fr}
-    }
+    /* GRID 3x2 for stats */
+    .stats-grid{display:grid;grid-template-columns: repeat(3, 1fr);grid-auto-rows: minmax(64px, auto);gap: 10px;margin-top: 12px;}
+    @media(max-width:960px){ .stats-grid{grid-template-columns:repeat(2,1fr)} }
+    @media(max-width:760px){ .grid{grid-template-columns:1fr} .col-span-4,.col-span-8{grid-column:1} .stats-grid{grid-template-columns:1fr} }
     table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
     th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left}
     .chart-wrap{height:260px;padding:10px}
     .small{font-size:12px;color:var(--muted)}
+    /* modal simple */
+    .modal { position: fixed; left: 0; right:0; top:0; bottom:0; display:flex; align-items:center; justify-content:center; background: rgba(2,6,23,0.6); z-index:50; }
+    .modal .card{max-width:520px; width:92%}
     /* touch improvements */
     button, input, textarea { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    .muted-btn{background:transparent;border:1px dashed rgba(255,255,255,0.04);color:var(--muted)}
+    .small-action{padding:6px 10px;border-radius:8px;font-size:13px}
   </style>
 
   <!-- Chart.js -->
@@ -68,24 +68,24 @@
 <body>
   <div class="container">
     <header>
-      <div class="brand">
-        <div class="logo" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C12 2 8 7 8 11.5C8 15 10 17 12 18C14 17 16 15 16 11.5C16 7 12 2 12 2Z" fill="white" opacity="0.95"/></svg>
-        </div>
+      <div class="brand logo-box">
+        <!-- image with fallback: if logo-text.svg missing fallback to PNG, otherwise show text -->
+        <img id="logoImg" class="logo-img" src="logo-text.svg" alt="GAS T. — Gas Tracker" />
         <div>
-          <h1>Gas Tracker</h1>
-          <div class="subtitle">Previsioni & storico — sincronizzato (Firebase)</div>
+          <h1 style="margin:0">GAS T.</h1>
+          <div class="subtitle">Consumi • Previsioni • Storico</div>
         </div>
       </div>
 
       <div style="display:flex;gap:8px;align-items:center">
-        <button id="exportBtn" class="ghost" title="Esporta CSV">Esporta CSV</button>
-        <button id="importBtn" class="ghost" title="Importa CSV">Importa CSV</button>
-        <button id="saveBtn" title="Salva lettura">Salva</button>
+        <button id="exportBtn" class="ghost small-action" title="Esporta CSV">Esporta CSV</button>
+        <button id="importBtn" class="ghost small-action" title="Importa CSV">Importa CSV</button>
+        <button id="saveBtn" class="small-action" title="Salva lettura">Salva</button>
       </div>
     </header>
 
     <div class="grid" role="main">
+      <!-- Left: input -->
       <div class="card col-span-4" aria-labelledby="paramsTitle">
         <h3 id="paramsTitle">Parametri & nuova lettura</h3>
 
@@ -96,7 +96,7 @@
           <input id="fixed_charge" type="number" step="0.01" value="10.00" />
         </label>
 
-        <h4 style="margin-top:12px">Aggiungi lettura</h4>
+        <h4 style="margin-top:12px">Aggiungi / Modifica lettura</h4>
         <label>Data
           <input id="date" type="date" />
         </label>
@@ -123,12 +123,14 @@
 
         <div style="display:flex;gap:10px;margin-top:10px">
           <button id="addBtn">Aggiungi</button>
+          <button id="cancelEditBtn" class="ghost" style="display:none">Annulla</button>
           <button id="clearBtn" class="ghost">Cancella tutto</button>
         </div>
 
         <div id="message" class="small" style="margin-top:8px"></div>
       </div>
 
+      <!-- Right: stats + chart + readings + monthly -->
       <div class="card col-span-8" aria-labelledby="statsTitle">
         <!-- TITLE centered -->
         <div style="text-align:center">
@@ -136,7 +138,7 @@
           <div class="small" style="margin-top:6px">Ultima lettura del giorno usata per calcoli</div>
         </div>
 
-        <!-- NEW: stats grid 3x2 -->
+        <!-- STATS grid 3x2 -->
         <div class="stats-grid" aria-hidden="false">
           <div class="stat"><div class="label">Letture</div><div class="value" id="total">0</div></div>
           <div class="stat"><div class="label">Media/giorno (Smc)</div><div class="value" id="avgDaily">-</div></div>
@@ -162,6 +164,12 @@
           <div class="small">Stima giornaliera (€): <strong id="estDailyCost">-</strong></div>
           <div class="small">Stima settimanale (€): <strong id="estWeeklyCost">-</strong></div>
         </div>
+
+        <h4 style="margin-top:14px">Consumo mensile (per mese)</h4>
+        <table role="table" aria-label="Consumo mensile">
+          <thead><tr><th>Mese</th><th>Consumo (Smc)</th><th>Media giornaliera (Smc/giorno)</th><th>Costo stimato (€)</th></tr></thead>
+          <tbody id="monthlyBody"></tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -184,6 +192,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 /* ================== Utilities ================== */
+let editingKey = null; // currently editing reading key
 function showMessage(msg, type){
   const el = document.getElementById('message');
   el.textContent = msg || '';
@@ -209,6 +218,46 @@ function initChart(){
 }
 
 /* ================== Core logic ================== */
+function startEditing(key){
+  // fetch reading and populate inputs
+  db.ref('readings/' + key).once('value').then(snap=>{
+    const r = snap.val();
+    if(!r) return showMessage('Lettura non trovata', 'error');
+    editingKey = key;
+    // populate
+    document.getElementById('date').value = r.date || '';
+    const dt = r.datetime || '';
+    document.getElementById('time').value = dt.slice(11,16) || '';
+    document.getElementById('reading').value = r.reading;
+    document.getElementById('temp').value = (typeof r.temperature !== 'undefined' && r.temperature !== null) ? r.temperature : '';
+    document.getElementById('notes').value = r.notes || '';
+    // store original timestamp in dataset on the add button (so we don't accidentally overwrite)
+    document.getElementById('addBtn').dataset.origTimestamp = r.timestamp || '';
+    // change UI
+    document.getElementById('addBtn').textContent = 'Aggiorna';
+    document.getElementById('cancelEditBtn').style.display = '';
+    showMessage('Modifica in corso — apporta le modifiche e premi Aggiorna', 'ok');
+  }).catch(e=> showMessage('Errore: '+e,'error'));
+}
+
+function cancelEdit(){
+  editingKey = null;
+  resetInput();
+  document.getElementById('addBtn').textContent = 'Aggiungi';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+  // clear stored original timestamp
+  delete document.getElementById('addBtn').dataset.origTimestamp;
+  showMessage('Modifica annullata', 'ok');
+}
+
+function resetInput(){
+  const today = new Date(); document.getElementById('date').value = today.toISOString().slice(0,10);
+  document.getElementById('reading').value = '';
+  document.getElementById('time').value = '';
+  document.getElementById('temp').value = '';
+  document.getElementById('notes').value = '';
+}
+
 function addReading(){
   const date = document.getElementById('date').value;
   const readingRaw = document.getElementById('reading').value;
@@ -220,8 +269,31 @@ function addReading(){
   const reading = parseFloat(readingRaw);
   const temperature = tempRaw === '' ? null : parseFloat(tempRaw);
   const datetime = isoWithTime(date, time);
-  const timestamp = Date.now();
 
+  if(editingKey){
+    // update existing WITHOUT changing original timestamp
+    const updates = {};
+    updates['/readings/' + editingKey + '/date'] = date;
+    updates['/readings/' + editingKey + '/datetime'] = datetime;
+    updates['/readings/' + editingKey + '/reading'] = reading;
+    updates['/readings/' + editingKey + '/temperature'] = temperature;
+    updates['/readings/' + editingKey + '/notes'] = notes;
+    // DO NOT overwrite timestamp. If you want to track update time, you could set updatedAt instead:
+    // updates['/readings/' + editingKey + '/updatedAt'] = Date.now();
+    db.ref().update(updates).then(()=>{
+      showMessage('Lettura aggiornata', 'ok');
+      editingKey = null;
+      delete document.getElementById('addBtn').dataset.origTimestamp;
+      document.getElementById('addBtn').textContent = 'Aggiungi';
+      document.getElementById('cancelEditBtn').style.display = 'none';
+      resetInput();
+      loadAll();
+    }).catch(err=> showMessage('Errore: '+err, 'error'));
+    return;
+  }
+
+  // new reading
+  const timestamp = Date.now();
   const newKey = db.ref('readings').push().key;
   const updates = {};
   updates['/readings/' + newKey] = { date, datetime, reading, temperature, notes, timestamp };
@@ -230,12 +302,13 @@ function addReading(){
   updates['/settings/fixed_charge'] = parseFloat(document.getElementById('fixed_charge').value) || 0;
 
   db.ref().update(updates)
-    .then(()=>{ showMessage('Lettura salvata', 'ok'); document.getElementById('reading').value=''; document.getElementById('notes').value=''; loadAll(); })
+    .then(()=>{ showMessage('Lettura salvata', 'ok'); resetInput(); loadAll(); })
     .catch(err=> showMessage('Errore: '+err, 'error'));
 }
 
 function deleteReading(key){
   if(!confirm('Eliminare questa lettura?')) return;
+  if(editingKey === key) cancelEdit();
   db.ref('readings/' + key).remove().then(()=>{ showMessage('Lettura eliminata','ok'); loadAll(); }).catch(e=>showMessage('Errore: '+e,'error'));
 }
 
@@ -256,12 +329,12 @@ function loadAll(){
     .catch(err => showMessage('Errore caricamento: '+err,'error'));
 }
 
-/* ====== UPDATED renderAll: supports intra-day totals and fallbacks ====== */
+/* ====== renderAll: supports intra-day totals, monthly aggregation and edit buttons ====== */
 function renderAll(readingsObj, settings){
   // trasformo readingsObj in array con chiave
   const arr = Object.keys(readingsObj).map(k => ({ key: k, ...readingsObj[k] }));
   // ordino per timestamp asc (vecchie prima)
-  arr.sort((a,b)=> (a.timestamp||0) - (b.timestamp||0));
+  arr.sort((a,b)=> (Number(a.timestamp||0)) - (Number(b.timestamp||0)));
 
   // render tabella (mostro le più recenti in cima)
   const tbody = document.getElementById('readingsBody');
@@ -269,7 +342,12 @@ function renderAll(readingsObj, settings){
   arr.slice().reverse().forEach(r=>{
     const time = (r.datetime || '').slice(11,19) || '-';
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${r.date}</td><td>${time}</td><td>${Number(r.reading).toFixed(3)}</td><td>${r.temperature!==null && typeof r.temperature!=='undefined' ? r.temperature : '-'}</td><td>${(r.notes||'')}</td><td><button class="ghost" onclick="deleteReading('${r.key}')">Elimina</button></td>`;
+    // actions: edit + delete
+    tr.innerHTML = `<td>${r.date}</td><td>${time}</td><td>${Number(r.reading).toFixed(3)}</td><td>${r.temperature!==null && typeof r.temperature!=='undefined' ? r.temperature : '-'}</td><td>${(r.notes||'')}</td>
+      <td>
+        <button class="small-action muted-btn" onclick="startEditing('${r.key}')">Modifica</button>
+        <button class="small-action ghost" onclick="deleteReading('${r.key}')">Elimina</button>
+      </td>`;
     tbody.appendChild(tr);
   });
 
@@ -300,27 +378,23 @@ function renderAll(readingsObj, settings){
       const total = Number(list[list.length-1].reading) - Number(list[0].reading);
       if(!isNaN(total) && total >= 0) dailyTotals.push({ date: d, total });
     }
-    // se c'è solo una lettura nel giorno non possiamo calcolare il consumo "del giorno" da questo metodo
   });
 
-  // Costruisco i diffs tra giorni basati su lastPerDay (differenze tra ultime letture giornaliere)
+  // diffs tra giornate sulla base di lastPerDay
   const dayDiffs = [];
   for(let i=1;i<lastPerDay.length;i++){
     const diff = Number(lastPerDay[i].reading) - Number(lastPerDay[i-1].reading);
     if(!isNaN(diff) && diff >= 0) dayDiffs.push(diff);
   }
 
-  // logica per decidere quale dato usare per calcoli:
-  // - se abbiamo dayDiffs (>=1) usiamo quelli per media giornaliera
-  // - altrimenti se non abbiamo dayDiffs ma abbiamo dailyTotals (almeno 1), usiamo la media dei dailyTotals
-  // - altrimenti fallback: prova a usare consumo odierno intra-day (last - first today)
+  // media giornaliera logica fallback
   let avgDaily = null;
   if(dayDiffs.length > 0){
     avgDaily = dayDiffs.reduce((a,b)=>a+b,0) / dayDiffs.length;
   } else if(dailyTotals.length > 0){
     avgDaily = dailyTotals.reduce((a,b)=>a+b.total,0) / dailyTotals.length;
   } else {
-    avgDaily = null; // non disponibile
+    avgDaily = null;
   }
 
   // calcolo stime
@@ -355,6 +429,49 @@ function renderAll(readingsObj, settings){
   const chartLabels = lastPerDay.map(x => x.date);
   const chartData = lastPerDay.map(x => Number(x.reading));
   updateChart(chartLabels, chartData);
+
+  // =========================
+  // Calcolo consumo mensile + media giornaliera (consumo / giorni_del_mese)
+  // =========================
+  const byMonth = {}; // ym -> {min, max, countDates, datesSet}
+  arr.forEach(r=>{
+    const ym = (r.date || '').slice(0,7); // 'YYYY-MM'
+    if(!ym) return;
+    const val = Number(r.reading);
+    if(isNaN(val)) return;
+    if(!byMonth[ym]) byMonth[ym] = { min: val, max: val, dates: new Set() };
+    if(val < byMonth[ym].min) byMonth[ym].min = val;
+    if(val > byMonth[ym].max) byMonth[ym].max = val;
+    // count unique dates present (not necessarily all days of month)
+    byMonth[ym].dates.add(r.date);
+  });
+
+  // render monthly table sorted desc (recenti prima)
+  const months = Object.keys(byMonth).sort().reverse();
+  const monthlyBody = document.getElementById('monthlyBody');
+  monthlyBody.innerHTML = '';
+  months.forEach(m=>{
+    const obj = byMonth[m];
+    let consumption = null;
+    if(typeof obj.min !== 'undefined' && typeof obj.max !== 'undefined' && obj.max >= obj.min){
+      consumption = obj.max - obj.min;
+    }
+    // days in month for calendar average
+    const [y, mm] = m.split('-').map(Number);
+    const daysInMonth = new Date(y, mm, 0).getDate();
+    const avgPerCalendarDay = consumption !== null ? (consumption / daysInMonth) : null;
+    // optional: average per recorded day:
+    const recordedDays = obj.dates.size || 0;
+    const avgPerRecordedDay = (consumption !== null && recordedDays>0) ? (consumption / recordedDays) : null;
+
+    const cost = (consumption !== null) ? (consumption * priceMp + fixedCharge) : null;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${m}</td>
+      <td>${consumption !== null ? consumption.toFixed(3) + ' Smc' : '-'}</td>
+      <td>${avgPerCalendarDay !== null ? avgPerCalendarDay.toFixed(3) + ' Smc/g' : '-'}</td>
+      <td>${cost !== null ? cost.toFixed(2) + ' €' : '-'}</td>`;
+    monthlyBody.appendChild(tr);
+  });
 }
 
 /* ================== Chart update ================== */
@@ -370,10 +487,10 @@ function updateChart(labels, data){
 function exportCsv(){
   db.ref('readings').once('value').then(snap=>{
     const obj = snap.val() || {};
-    const rows = [['key','date','datetime','reading','temperature','notes']];
+    const rows = [['key','date','datetime','reading','temperature','notes','timestamp']];
     Object.keys(obj).forEach(k=>{
       const r = obj[k];
-      rows.push([k, r.date || '', r.datetime || '', r.reading || '', r.temperature || '', (r.notes||'').replace(/"/g,'""')]);
+      rows.push([k, r.date || '', r.datetime || '', r.reading || '', r.temperature || '', (r.notes||'').replace(/"/g,'""'), r.timestamp || '']);
     });
     const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -394,7 +511,6 @@ function importCsvHandler(file){
     const dataLines = lines.slice(1);
     const updates = {};
     dataLines.forEach(line=>{
-      // naive CSV parse assuming quoted fields
       const cols = splitCsvLine(line);
       if(cols.length < 6) return;
       const key = cols[0] || db.ref('readings').push().key;
@@ -404,7 +520,7 @@ function importCsvHandler(file){
         reading: parseFloat(cols[3]) || 0,
         temperature: cols[4] === '' ? null : parseFloat(cols[4]),
         notes: cols[5] || '',
-        timestamp: Date.now()
+        timestamp: cols[6] ? Number(cols[6]) : Date.now()
       };
     });
     if(Object.keys(updates).length === 0){ showMessage('Nessuna riga valida nel CSV', 'error'); return; }
@@ -431,10 +547,31 @@ document.addEventListener('DOMContentLoaded', ()=>{
   // default date today
   const today = new Date(); document.getElementById('date').value = today.toISOString().slice(0,10);
 
+  // logo fallback: try svg, else png, else text
+  const logo = document.getElementById('logoImg');
+  // if svg fails to load, fallback to png; if png fails create text node
+  logo.addEventListener('error', ()=>{
+    if(logo.src && logo.src.endsWith('.svg')){
+      logo.src = 'icon-192.png';
+    } else {
+      // replace img with text
+      const parent = logo.parentElement;
+      parent.removeChild(logo);
+      const span = document.createElement('div');
+      span.style.fontWeight = '800';
+      span.textContent = 'GAS T.';
+      parent.insertBefore(span, parent.firstChild);
+    }
+  });
+
   // bind buttons (touch + click)
   const addBtn = document.getElementById('addBtn');
   addBtn.addEventListener('click', addReading);
   addBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); addReading(); });
+
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
+  cancelEditBtn.addEventListener('click', cancelEdit);
+  cancelEditBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); cancelEdit(); });
 
   const clearBtn = document.getElementById('clearBtn');
   clearBtn.addEventListener('click', clearAll);
