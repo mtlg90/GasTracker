@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>GAS T. — Gas Tracker</title>
 
-  <!-- Icons (assicurati di caricare i file in repository root) -->
+  <!-- Icons (carica i file in repository root) -->
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
@@ -14,7 +14,6 @@
   <meta name="theme-color" content="#071023">
 
   <style>
-    /* Modern dark UI */
     :root{
       --bg1:#071023; --bg2:#071428; --text:#e6eef8; --muted:#9ca3af;
       --accent1:#7c3aed; --accent2:#06b6d4; --glass:rgba(255,255,255,0.03);
@@ -39,10 +38,9 @@
     button{background:linear-gradient(90deg,var(--accent1),var(--accent2));border:none;padding:10px 14px;border-radius:12px;color:#fff;font-weight:600;cursor:pointer}
     button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
     .stats{display:flex;gap:12px;flex-wrap:wrap}
-    .stat{flex:1;padding:14px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));text-align:center;min-width:140px}
+    .stat{flex:1;padding:14px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));text-align:center;min-width:140px;cursor:pointer}
     .stat .label{font-size:12px;color:var(--muted)}
     .stat .value{font-size:16px;font-weight:700;margin-top:6px}
-    /* GRID 3x2 for stats */
     .stats-grid{display:grid;grid-template-columns: repeat(3, 1fr);grid-auto-rows: minmax(64px, auto);gap: 10px;margin-top: 12px;}
     @media(max-width:960px){ .stats-grid{grid-template-columns:repeat(2,1fr)} }
     @media(max-width:760px){ .grid{grid-template-columns:1fr} .col-span-4,.col-span-8{grid-column:1} .stats-grid{grid-template-columns:1fr} }
@@ -50,13 +48,19 @@
     th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left}
     .chart-wrap{height:260px;padding:10px}
     .small{font-size:12px;color:var(--muted)}
-    /* modal simple */
-    .modal { position: fixed; left: 0; right:0; top:0; bottom:0; display:flex; align-items:center; justify-content:center; background: rgba(2,6,23,0.6); z-index:50; }
-    .modal .card{max-width:520px; width:92%}
+    /* overlay (non trasparente) */
+    .overlay { position: fixed; inset:0; display:none; align-items:flex-start; justify-content:center; padding:24px; z-index:200; overflow:auto; }
+    .overlay.active{ display:flex; }
+    .panel { background: linear-gradient(180deg, #0b1220, #071023); border-radius:12px; padding:16px; width:100%; max-width:980px; box-shadow:0 30px 80px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.03); color:var(--text); }
+    .tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+    .tabs button{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:8px 12px;border-radius:8px;cursor:pointer}
+    .tabs button.active{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#fff;border:none}
+    .group { margin-bottom:12px; border-radius:8px; padding:10px; background: rgba(255,255,255,0.02) }
+    .group h5{margin:0 0 6px 0}
+    .small-action{padding:6px 10px;border-radius:8px;font-size:13px}
+    .muted-btn{background:transparent;border:1px dashed rgba(255,255,255,0.04);color:var(--muted)}
     /* touch improvements */
     button, input, textarea { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-    .muted-btn{background:transparent;border:1px dashed rgba(255,255,255,0.04);color:var(--muted)}
-    .small-action{padding:6px 10px;border-radius:8px;font-size:13px}
   </style>
 
   <!-- Chart.js -->
@@ -69,7 +73,6 @@
   <div class="container">
     <header>
       <div class="brand logo-box">
-        <!-- image with fallback: if logo-text.svg missing fallback to PNG, otherwise show text -->
         <img id="logoImg" class="logo-img" src="logo-text.svg" alt="GAS T. — Gas Tracker" />
         <div>
           <h1 style="margin:0">GAS T.</h1>
@@ -132,21 +135,19 @@
 
       <!-- Right: stats + chart + readings + monthly -->
       <div class="card col-span-8" aria-labelledby="statsTitle">
-        <!-- TITLE centered -->
         <div style="text-align:center">
           <h3 id="statsTitle" style="margin:0">Statistiche & grafico</h3>
-          <div class="small" style="margin-top:6px">Ultima lettura del giorno usata per calcoli</div>
+          <div class="small" style="margin-top:6px">Ultima lettura del giorno usata per calcoli — clicca su una card per vedere lo storico dettagliato</div>
         </div>
 
-        <!-- STATS grid 3x2 -->
         <div class="stats-grid" aria-hidden="false">
-          <div class="stat"><div class="label">Letture</div><div class="value" id="total">0</div></div>
-          <div class="stat"><div class="label">Media/giorno (Smc)</div><div class="value" id="avgDaily">-</div></div>
-          <div class="stat"><div class="label">Stima giornaliera (Smc)</div><div class="value" id="estDailySmc">-</div></div>
+          <div id="statTotal" class="stat" title="Numero di giorni con letture"><div class="label">Giorni registrati</div><div class="value" id="total">0</div></div>
+          <div id="statAvgDaily" class="stat" title="Media giornaliera calcolata da differenze giornaliere"><div class="label">Media/giorno (Smc)</div><div class="value" id="avgDaily">-</div></div>
+          <div id="statEstDaily" class="stat" title="Stima giornaliera basata sulla media"><div class="label">Stima giornaliera (Smc)</div><div class="value" id="estDailySmc">-</div></div>
 
-          <div class="stat"><div class="label">Stima settimanale (Smc)</div><div class="value" id="estWeeklySmc">-</div></div>
-          <div class="stat"><div class="label">Stima 30gg (Smc)</div><div class="value" id="estMonthlySmc">-</div></div>
-          <div class="stat"><div class="label">Costo stimato mensile (€)</div><div class="value" id="estMonthlyCost">-</div></div>
+          <div id="statEstWeekly" class="stat"><div class="label">Stima settimanale (Smc)</div><div class="value" id="estWeeklySmc">-</div></div>
+          <div id="statEstMonthly" class="stat"><div class="label">Stima 30gg (Smc)</div><div class="value" id="estMonthlySmc">-</div></div>
+          <div id="statEstMonthlyCost" class="stat"><div class="label">Costo stimato mensile (€)</div><div class="value" id="estMonthlyCost">-</div></div>
         </div>
 
         <div class="chart-wrap card" style="margin-top:12px">
@@ -174,7 +175,29 @@
     </div>
   </div>
 
-  <!-- hidden file input for import -->
+  <!-- Overlay: cronologia (non trasparente) -->
+  <div id="overlay" class="overlay" aria-hidden="true">
+    <div class="panel" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h3 id="historyTitle">Cronologia consumi</h3>
+        <div>
+          <button id="exportHistoryBtn" class="ghost small-action">Esporta vista CSV</button>
+          <button id="closeOverlay" class="small-action" style="margin-left:8px">Chiudi</button>
+        </div>
+      </div>
+
+      <div class="tabs" id="historyTabs">
+        <button data-tab="daily" class="active">Giornaliero</button>
+        <button data-tab="monthly">Mensile</button>
+        <button data-tab="yearly">Annuale</button>
+      </div>
+
+      <div id="historyContent" style="max-height:60vh; overflow:auto; padding-right:6px">
+        <!-- contenuto dinamico -->
+      </div>
+    </div>
+  </div>
+
   <input id="fileImport" type="file" accept=".csv,text/csv" style="display:none" />
 
 <script>
@@ -192,14 +215,14 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 /* ================== Utilities ================== */
-let editingKey = null; // currently editing reading key
+let editingKey = null;
 function showMessage(msg, type){
   const el = document.getElementById('message');
+  if(!el) return;
   el.textContent = msg || '';
   el.style.color = type === 'error' ? '#fca5a5' : (type === 'ok' ? '#86efac' : 'var(--muted)');
   if(msg) setTimeout(()=>{ if(el.textContent===msg) el.textContent=''; }, 3000);
 }
-function pad(n){ return String(n).padStart(2,'0'); }
 function isoWithTime(dateStr, timeStr){
   if(!timeStr) timeStr = '00:00:00';
   if(timeStr.length===5) timeStr += ':00';
@@ -219,24 +242,20 @@ function initChart(){
 
 /* ================== Core logic ================== */
 function startEditing(key){
-  // fetch reading and populate inputs
   db.ref('readings/' + key).once('value').then(snap=>{
     const r = snap.val();
-    if(!r) return showMessage('Lettura non trovata', 'error');
+    if(!r) return showMessage('Lettura non trovata','error');
     editingKey = key;
-    // populate
     document.getElementById('date').value = r.date || '';
     const dt = r.datetime || '';
     document.getElementById('time').value = dt.slice(11,16) || '';
     document.getElementById('reading').value = r.reading;
     document.getElementById('temp').value = (typeof r.temperature !== 'undefined' && r.temperature !== null) ? r.temperature : '';
     document.getElementById('notes').value = r.notes || '';
-    // store original timestamp in dataset on the add button (so we don't accidentally overwrite)
     document.getElementById('addBtn').dataset.origTimestamp = r.timestamp || '';
-    // change UI
     document.getElementById('addBtn').textContent = 'Aggiorna';
     document.getElementById('cancelEditBtn').style.display = '';
-    showMessage('Modifica in corso — apporta le modifiche e premi Aggiorna', 'ok');
+    showMessage('Modifica in corso — premi Aggiorna per salvare', 'ok');
   }).catch(e=> showMessage('Errore: '+e,'error'));
 }
 
@@ -245,9 +264,8 @@ function cancelEdit(){
   resetInput();
   document.getElementById('addBtn').textContent = 'Aggiungi';
   document.getElementById('cancelEditBtn').style.display = 'none';
-  // clear stored original timestamp
   delete document.getElementById('addBtn').dataset.origTimestamp;
-  showMessage('Modifica annullata', 'ok');
+  showMessage('Modifica annullata','ok');
 }
 
 function resetInput(){
@@ -265,30 +283,29 @@ function addReading(){
   const tempRaw = document.getElementById('temp').value;
   const notes = document.getElementById('notes').value || '';
 
-  if(!date || readingRaw === '') { showMessage('Inserisci data e lettura', 'error'); return; }
+  if(!date || readingRaw === '') { showMessage('Inserisci data e lettura','error'); return; }
   const reading = parseFloat(readingRaw);
   const temperature = tempRaw === '' ? null : parseFloat(tempRaw);
   const datetime = isoWithTime(date, time);
 
   if(editingKey){
-    // update existing WITHOUT changing original timestamp
+    // update WITHOUT changing original timestamp; record updatedAt
     const updates = {};
     updates['/readings/' + editingKey + '/date'] = date;
     updates['/readings/' + editingKey + '/datetime'] = datetime;
     updates['/readings/' + editingKey + '/reading'] = reading;
     updates['/readings/' + editingKey + '/temperature'] = temperature;
     updates['/readings/' + editingKey + '/notes'] = notes;
-    // DO NOT overwrite timestamp. If you want to track update time, you could set updatedAt instead:
-    // updates['/readings/' + editingKey + '/updatedAt'] = Date.now();
+    updates['/readings/' + editingKey + '/updatedAt'] = Date.now();
     db.ref().update(updates).then(()=>{
-      showMessage('Lettura aggiornata', 'ok');
+      showMessage('Lettura aggiornata','ok');
       editingKey = null;
       delete document.getElementById('addBtn').dataset.origTimestamp;
       document.getElementById('addBtn').textContent = 'Aggiungi';
       document.getElementById('cancelEditBtn').style.display = 'none';
       resetInput();
       loadAll();
-    }).catch(err=> showMessage('Errore: '+err, 'error'));
+    }).catch(err=> showMessage('Errore: '+err,'error'));
     return;
   }
 
@@ -297,13 +314,13 @@ function addReading(){
   const newKey = db.ref('readings').push().key;
   const updates = {};
   updates['/readings/' + newKey] = { date, datetime, reading, temperature, notes, timestamp };
-  // also persist settings
+  // persist settings
   updates['/settings/price_mp'] = parseFloat(document.getElementById('price_mp').value) || 0;
   updates['/settings/fixed_charge'] = parseFloat(document.getElementById('fixed_charge').value) || 0;
 
   db.ref().update(updates)
-    .then(()=>{ showMessage('Lettura salvata', 'ok'); resetInput(); loadAll(); })
-    .catch(err=> showMessage('Errore: '+err, 'error'));
+    .then(()=>{ showMessage('Lettura salvata','ok'); resetInput(); loadAll(); })
+    .catch(err=> showMessage('Errore: '+err,'error'));
 }
 
 function deleteReading(key){
@@ -317,6 +334,7 @@ function clearAll(){
   db.ref('readings').remove().then(()=>{ showMessage('Tutti i dati cancellati','ok'); loadAll(); }).catch(e=>showMessage('Errore: '+e,'error'));
 }
 
+/* ========== Load & Render ========= */
 function loadAll(){
   Promise.all([ db.ref('readings').once('value'), db.ref('settings').once('value') ])
     .then(([snapR, snapS])=>{
@@ -329,20 +347,15 @@ function loadAll(){
     .catch(err => showMessage('Errore caricamento: '+err,'error'));
 }
 
-/* ====== renderAll: supports intra-day totals, monthly aggregation and edit buttons ====== */
 function renderAll(readingsObj, settings){
-  // trasformo readingsObj in array con chiave
-  const arr = Object.keys(readingsObj).map(k => ({ key: k, ...readingsObj[k] }));
-  // ordino per timestamp asc (vecchie prima)
-  arr.sort((a,b)=> (Number(a.timestamp||0)) - (Number(b.timestamp||0)));
+  const arr = Object.keys(readingsObj).map(k=>({ key: k, ...readingsObj[k] }));
+  arr.sort((a,b)=> Number(a.timestamp||0) - Number(b.timestamp||0));
 
-  // render tabella (mostro le più recenti in cima)
-  const tbody = document.getElementById('readingsBody');
-  tbody.innerHTML = '';
+  // render table
+  const tbody = document.getElementById('readingsBody'); tbody.innerHTML = '';
   arr.slice().reverse().forEach(r=>{
-    const time = (r.datetime || '').slice(11,19) || '-';
+    const time = (r.datetime||'').slice(11,19) || '-';
     const tr = document.createElement('tr');
-    // actions: edit + delete
     tr.innerHTML = `<td>${r.date}</td><td>${time}</td><td>${Number(r.reading).toFixed(3)}</td><td>${r.temperature!==null && typeof r.temperature!=='undefined' ? r.temperature : '-'}</td><td>${(r.notes||'')}</td>
       <td>
         <button class="small-action muted-btn" onclick="startEditing('${r.key}')">Modifica</button>
@@ -351,70 +364,58 @@ function renderAll(readingsObj, settings){
     tbody.appendChild(tr);
   });
 
-  // gruppo letture per data in array ordinati
-  const byDateArrays = {}; // date => [records asc by timestamp]
+  // group by date (asc)
+  const byDate = {};
   arr.forEach(r=>{
-    if(!byDateArrays[r.date]) byDateArrays[r.date] = [];
-    byDateArrays[r.date].push(r);
+    if(!r.date) return;
+    if(!byDate[r.date]) byDate[r.date] = [];
+    byDate[r.date].push(r);
   });
+  const dates = Object.keys(byDate).sort();
 
-  // ottengo lastPerDay (ultima lettura del giorno) e firstPerDay (prima lettura del giorno)
-  const dates = Object.keys(byDateArrays).sort(); // asc
+  // lastPerDay and intra-day totals
   const lastPerDay = [];
-  const firstPerDay = [];
+  const intraDay = {};
   dates.forEach(d=>{
-    const list = byDateArrays[d]; // asc
-    if(list && list.length){
-      firstPerDay.push({ date: d, reading: Number(list[0].reading), timestamp: list[0].timestamp });
-      lastPerDay.push({ date: d, reading: Number(list[list.length-1].reading), timestamp: list[list.length-1].timestamp });
+    const list = byDate[d]; // asc
+    if(!list || list.length===0) return;
+    const first = list[0], last = list[list.length-1];
+    lastPerDay.push({ date:d, reading: Number(last.reading), key: last.key, timestamp: last.timestamp || 0 });
+    if(list.length>=2){
+      const total = Number(last.reading) - Number(first.reading);
+      intraDay[d] = (!isNaN(total) && total>=0) ? total : null;
     }
   });
 
-  // calcolo totali giornalieri (quando possibile) come last - first per lo stesso giorno
-  const dailyTotals = []; // {date, total}
-  dates.forEach(d=>{
-    const list = byDateArrays[d];
-    if(list && list.length >= 2){
-      const total = Number(list[list.length-1].reading) - Number(list[0].reading);
-      if(!isNaN(total) && total >= 0) dailyTotals.push({ date: d, total });
-    }
-  });
-
-  // diffs tra giornate sulla base di lastPerDay
-  const dayDiffs = [];
+  // daily consumption: diff between consecutive lastPerDay
+  const dailyConsumption = [];
   for(let i=1;i<lastPerDay.length;i++){
-    const diff = Number(lastPerDay[i].reading) - Number(lastPerDay[i-1].reading);
-    if(!isNaN(diff) && diff >= 0) dayDiffs.push(diff);
+    const cur = lastPerDay[i];
+    const prev = lastPerDay[i-1];
+    const diff = Number(cur.reading) - Number(prev.reading);
+    dailyConsumption.push({ date: cur.date, consumption: (!isNaN(diff) && diff >= 0) ? diff : null });
   }
 
-  // media giornaliera logica fallback
-  let avgDaily = null;
-  if(dayDiffs.length > 0){
-    avgDaily = dayDiffs.reduce((a,b)=>a+b,0) / dayDiffs.length;
-  } else if(dailyTotals.length > 0){
-    avgDaily = dailyTotals.reduce((a,b)=>a+b.total,0) / dailyTotals.length;
-  } else {
-    avgDaily = null;
-  }
+  // average daily
+  const validDaily = dailyConsumption.filter(x=>x.consumption!==null).map(x=>x.consumption);
+  const avgDaily = validDaily.length ? (validDaily.reduce((a,b)=>a+b,0)/validDaily.length) : null;
 
-  // calcolo stime
+  // today's intra-day if present
   const today = new Date().toISOString().slice(0,10);
-  const listToday = byDateArrays[today] || [];
-  const todayIntra = (listToday.length >= 2) ? (Number(listToday[listToday.length-1].reading) - Number(listToday[0].reading)) : null;
+  const todayIntra = intraDay[today] || null;
 
-  const estDailySmc = avgDaily !== null ? avgDaily : (todayIntra !== null ? todayIntra : null);
+  const estDailySmc = (avgDaily !== null) ? avgDaily : (todayIntra !== null ? todayIntra : null);
   const estWeeklySmc = estDailySmc !== null ? estDailySmc * 7 : null;
   const estMonthly = estDailySmc !== null ? estDailySmc * 30 : null;
 
-  const priceMp = (settings && settings.price_mp) ? settings.price_mp : parseFloat(document.getElementById('price_mp').value) || 0;
-  const fixedCharge = (settings && settings.fixed_charge) ? settings.fixed_charge : parseFloat(document.getElementById('fixed_charge').value) || 0;
+  const priceMp = (settings && typeof settings.price_mp !== 'undefined') ? settings.price_mp : parseFloat(document.getElementById('price_mp').value) || 0;
+  const fixedCharge = (settings && typeof settings.fixed_charge !== 'undefined') ? settings.fixed_charge : parseFloat(document.getElementById('fixed_charge').value) || 0;
   const fixedPerDay = fixedCharge / 30;
-
   const estDailyCost = estDailySmc !== null ? (estDailySmc * priceMp + fixedPerDay) : null;
-  const estWeeklyCost = estWeeklySmc !== null ? (estWeeklySmc * priceMp + fixedPerDay * 7) : null;
+  const estWeeklyCost = estWeeklySmc !== null ? (estWeeklySmc * priceMp + fixedPerDay*7) : null;
   const estMonthlyCost = estMonthly !== null ? (estMonthly * priceMp + fixedCharge) : null;
 
-  // aggiorno DOM con valori (gestisco i casi null)
+  // update DOM stats
   document.getElementById('total').textContent = dates.length;
   document.getElementById('avgDaily').textContent = avgDaily !== null ? avgDaily.toFixed(3) + ' Smc/g' : '-';
   document.getElementById('estDailySmc').textContent = estDailySmc !== null ? estDailySmc.toFixed(3) + ' Smc' : '-';
@@ -425,78 +426,63 @@ function renderAll(readingsObj, settings){
   document.getElementById('estWeeklyCost').textContent = estWeeklyCost !== null ? estWeeklyCost.toFixed(2) + ' €' : '-';
   document.getElementById('todayConsumption').textContent = todayIntra !== null ? (todayIntra.toFixed(3) + ' Smc') : '-';
 
-  // Aggiorno il chart: uso lastPerDay (etichette: date, valori: last reading)
-  const chartLabels = lastPerDay.map(x => x.date);
-  const chartData = lastPerDay.map(x => Number(x.reading));
-  updateChart(chartLabels, chartData);
+  // update chart
+  const labels = lastPerDay.map(x=>x.date);
+  const data = lastPerDay.map(x=>x.reading);
+  updateChart(labels, data);
 
-  // =========================
-  // Calcolo consumo mensile + media giornaliera (consumo / giorni_del_mese)
-  // =========================
-  const byMonth = {}; // ym -> {min, max, countDates, datesSet}
+  // monthly aggregation (min/max approach)
+  const byMonth = {};
   arr.forEach(r=>{
-    const ym = (r.date || '').slice(0,7); // 'YYYY-MM'
-    if(!ym) return;
+    if(!r.date) return;
+    const ym = r.date.slice(0,7);
     const val = Number(r.reading);
     if(isNaN(val)) return;
     if(!byMonth[ym]) byMonth[ym] = { min: val, max: val, dates: new Set() };
+    byMonth[ym].dates.add(r.date);
     if(val < byMonth[ym].min) byMonth[ym].min = val;
     if(val > byMonth[ym].max) byMonth[ym].max = val;
-    // count unique dates present (not necessarily all days of month)
-    byMonth[ym].dates.add(r.date);
   });
 
-  // render monthly table sorted desc (recenti prima)
+  // render monthly table
   const months = Object.keys(byMonth).sort().reverse();
-  const monthlyBody = document.getElementById('monthlyBody');
-  monthlyBody.innerHTML = '';
+  const monthlyBody = document.getElementById('monthlyBody'); monthlyBody.innerHTML = '';
   months.forEach(m=>{
     const obj = byMonth[m];
     let consumption = null;
-    if(typeof obj.min !== 'undefined' && typeof obj.max !== 'undefined' && obj.max >= obj.min){
-      consumption = obj.max - obj.min;
-    }
-    // days in month for calendar average
+    if(typeof obj.min !== 'undefined' && typeof obj.max !== 'undefined' && obj.max >= obj.min) consumption = obj.max - obj.min;
     const [y, mm] = m.split('-').map(Number);
     const daysInMonth = new Date(y, mm, 0).getDate();
     const avgPerCalendarDay = consumption !== null ? (consumption / daysInMonth) : null;
-    // optional: average per recorded day:
-    const recordedDays = obj.dates.size || 0;
-    const avgPerRecordedDay = (consumption !== null && recordedDays>0) ? (consumption / recordedDays) : null;
-
-    const cost = (consumption !== null) ? (consumption * priceMp + fixedCharge) : null;
+    const cost = consumption !== null ? (consumption * priceMp + fixedCharge) : null;
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${m}</td>
-      <td>${consumption !== null ? consumption.toFixed(3) + ' Smc' : '-'}</td>
-      <td>${avgPerCalendarDay !== null ? avgPerCalendarDay.toFixed(3) + ' Smc/g' : '-'}</td>
-      <td>${cost !== null ? cost.toFixed(2) + ' €' : '-'}</td>`;
+    tr.innerHTML = `<td>${m}</td><td>${consumption!==null?consumption.toFixed(3)+' Smc':'-'}</td><td>${avgPerCalendarDay!==null?avgPerCalendarDay.toFixed(3)+' Smc/g':'-'}</td><td>${cost!==null?cost.toFixed(2)+' €':'-'}</td>`;
     monthlyBody.appendChild(tr);
   });
+
+  window.__computed = { lastPerDay, intraDay, dailyConsumption, byMonth, priceMp, fixedCharge };
 }
 
-/* ================== Chart update ================== */
+/* ========== Chart update ========== */
 function updateChart(labels, data){
   if(!chart) return;
-  if(!labels || labels.length === 0){ chart.data.labels = []; chart.data.datasets[0].data = []; chart.update(); return; }
   chart.data.labels = labels;
   chart.data.datasets[0].data = data;
   chart.update();
 }
 
-/* ================== Export / Import CSV ================== */
+/* ========== Export / Import ========== */
 function exportCsv(){
   db.ref('readings').once('value').then(snap=>{
     const obj = snap.val() || {};
     const rows = [['key','date','datetime','reading','temperature','notes','timestamp']];
     Object.keys(obj).forEach(k=>{
       const r = obj[k];
-      rows.push([k, r.date || '', r.datetime || '', r.reading || '', r.temperature || '', (r.notes||'').replace(/"/g,'""'), r.timestamp || '']);
+      rows.push([k, r.date||'', r.datetime||'', r.reading||'', r.temperature||'', (r.notes||'').replace(/"/g,'""'), r.timestamp||'']);
     });
-    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'gas_readings.csv'; a.click();
-    URL.revokeObjectURL(url);
+    const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type:'text/csv' }); const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'gas_readings.csv'; a.click(); URL.revokeObjectURL(url);
   });
 }
 
@@ -506,8 +492,7 @@ function importCsvHandler(file){
   reader.onload = e=>{
     const text = e.target.result;
     const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0);
-    if(lines.length<=1){ showMessage('CSV vuoto o non valido', 'error'); return; }
-    // skip header
+    if(lines.length<=1){ showMessage('CSV vuoto o non valido','error'); return; }
     const dataLines = lines.slice(1);
     const updates = {};
     dataLines.forEach(line=>{
@@ -517,13 +502,13 @@ function importCsvHandler(file){
       updates['/readings/' + key] = {
         date: cols[1],
         datetime: cols[2],
-        reading: parseFloat(cols[3]) || 0,
+        reading: parseFloat(cols[3])||0,
         temperature: cols[4] === '' ? null : parseFloat(cols[4]),
         notes: cols[5] || '',
         timestamp: cols[6] ? Number(cols[6]) : Date.now()
       };
     });
-    if(Object.keys(updates).length === 0){ showMessage('Nessuna riga valida nel CSV', 'error'); return; }
+    if(Object.keys(updates).length===0){ showMessage('Nessuna riga valida nel CSV','error'); return; }
     db.ref().update(updates).then(()=>{ showMessage('Import completato','ok'); loadAll(); }).catch(e=>showMessage('Errore import: '+e,'error'));
   };
   reader.readAsText(file);
@@ -532,71 +517,169 @@ function splitCsvLine(line){
   const res=[]; let cur=''; let inQ=false;
   for(let i=0;i<line.length;i++){
     const c=line[i];
-    if(c === '"' ){ if(inQ && line[i+1] === '"'){ cur += '"'; i++; continue; } inQ = !inQ; continue; }
-    if(c === ',' && !inQ){ res.push(cur); cur=''; continue; }
+    if(c==='\"'){ if(inQ && line[i+1]==='\"'){ cur+='"'; i++; continue;} inQ=!inQ; continue;}
+    if(c===',' && !inQ){ res.push(cur); cur=''; continue;}
     cur += c;
   }
   res.push(cur);
   return res.map(s=>s.replace(/^"|"$/g,'').trim());
 }
 
-/* ================== Events & init ================== */
+/* ========== History overlay ========== */
+function openOverlay(defaultTab='daily'){
+  const overlay = document.getElementById('overlay');
+  overlay.classList.add('active');
+  overlay.setAttribute('aria-hidden','false');
+  selectHistoryTab(defaultTab);
+  renderHistory(defaultTab);
+}
+function closeOverlay(){ const overlay = document.getElementById('overlay'); overlay.classList.remove('active'); overlay.setAttribute('aria-hidden','true'); }
+function selectHistoryTab(tab){
+  document.querySelectorAll('#historyTabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  renderHistory(tab);
+}
+
+function renderHistory(tab){
+  const content = document.getElementById('historyContent');
+  content.innerHTML = '';
+  const computed = window.__computed || {};
+  const lastPerDay = computed.lastPerDay || [];
+  const dailyConsumption = computed.dailyConsumption || [];
+  const byMonth = computed.byMonth || {};
+  if(tab==='daily'){
+    const fragment = document.createDocumentFragment();
+    const header = document.createElement('div'); header.className='small'; header.textContent = 'Consumo giornaliero (ultima_lettura_giorno - ultima_lettura_giorno_precedente)';
+    fragment.appendChild(header);
+    const grouped = {};
+    dailyConsumption.slice().reverse().forEach(d=>{
+      const ym = d.date.slice(0,7);
+      if(!grouped[ym]) grouped[ym]=[];
+      grouped[ym].push(d);
+    });
+    Object.keys(grouped).sort().reverse().forEach(ym=>{
+      const g = document.createElement('div'); g.className='group';
+      g.innerHTML = `<h5>${ym} — ${grouped[ym].length} giorni</h5>`;
+      const ul = document.createElement('div');
+      grouped[ym].forEach(item=>{
+        const v = item.consumption !== null ? item.consumption.toFixed(3) + ' Smc' : '-';
+        const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.padding='6px 0';
+        row.innerHTML = `<div>${item.date}</div><div style="color:var(--muted)">${v}</div>`;
+        ul.appendChild(row);
+      });
+      g.appendChild(ul); fragment.appendChild(g);
+    });
+    content.appendChild(fragment);
+  } else if(tab==='monthly'){
+    const frag = document.createDocumentFragment();
+    const header = document.createElement('div'); header.className='small'; header.textContent='Aggregato mensile (min/max reading del mese)';
+    frag.appendChild(header);
+    const months = Object.keys(byMonth).sort().reverse();
+    months.forEach(m=>{
+      const obj = byMonth[m];
+      const consumption = (typeof obj.min!=='undefined' && typeof obj.max!=='undefined' && obj.max>=obj.min) ? (obj.max - obj.min) : null;
+      const recDays = obj.dates ? obj.dates.size : 0;
+      const div = document.createElement('div'); div.className='group';
+      div.innerHTML = `<h5>${m}</h5><div>Consumo: ${consumption!==null?consumption.toFixed(3)+' Smc':'-'}</div><div>Giorni registrati: ${recDays}</div>`;
+      frag.appendChild(div);
+    });
+    content.appendChild(frag);
+  } else if(tab==='yearly'){
+    const years = {};
+    Object.keys(byMonth).forEach(m=>{
+      const y = m.slice(0,4);
+      const obj = byMonth[m];
+      const consumption = (typeof obj.min!=='undefined' && typeof obj.max!=='undefined' && obj.max>=obj.min) ? (obj.max - obj.min) : null;
+      if(!years[y]) years[y] = { months: [], total:0, valid:false };
+      years[y].months.push({month:m, consumption});
+      if(consumption!==null){ years[y].total += consumption; years[y].valid = true; }
+    });
+    const frag = document.createDocumentFragment();
+    Object.keys(years).sort().reverse().forEach(y=>{
+      const info = years[y];
+      const div = document.createElement('div'); div.className='group';
+      div.innerHTML = `<h5>${y}</h5><div>Consumo totale anno: ${info.valid?info.total.toFixed(3)+' Smc':'-'}</div><div>Numero mesi registrati: ${info.months.length}</div>`;
+      frag.appendChild(div);
+    });
+    content.appendChild(frag);
+  }
+}
+
+function exportHistoryView(){
+  const active = document.querySelector('#historyTabs button.active').dataset.tab;
+  const computed = window.__computed || {};
+  let rows = [];
+  if(active==='daily'){
+    rows.push(['date','consumption_smc']);
+    (computed.dailyConsumption||[]).forEach(d=> rows.push([d.date, d.consumption!==null?d.consumption:'']));
+  } else if(active==='monthly'){
+    rows.push(['month','min','max','consumption','recorded_days']);
+    const byMonth = computed.byMonth || {};
+    Object.keys(byMonth).sort().forEach(m=>{
+      const b = byMonth[m];
+      const min = b.min; const max = b.max;
+      const consumption = (typeof min!=='undefined' && typeof max!=='undefined' && max>=min) ? (max-min): '';
+      rows.push([m, min||'', max||'', consumption||'', b.dates?b.dates.size:'']);
+    });
+  } else if(active==='yearly'){
+    rows.push(['year','total_consumption','months_recorded']);
+    const byMonth = computed.byMonth || {};
+    const years = {};
+    Object.keys(byMonth).forEach(m=>{
+      const y = m.slice(0,4);
+      if(!years[y]) years[y] = { total:0, count:0, valid:false };
+      const min = byMonth[m].min; const max = byMonth[m].max;
+      const consumption = (typeof min!=='undefined' && typeof max!=='undefined' && max>=min) ? (max-min): 0;
+      if(consumption) { years[y].total += consumption; years[y].valid = true; }
+      years[y].count++;
+    });
+    Object.keys(years).sort().forEach(y=>{
+      rows.push([y, years[y].valid?years[y].total:'', years[y].count]);
+    });
+  }
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type:'text/csv' }); const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'history.csv'; a.click(); URL.revokeObjectURL(url);
+}
+
+/* ========== Events & init ========== */
 document.addEventListener('DOMContentLoaded', ()=>{
-  // init chart
   initChart();
-  // default date today
-  const today = new Date(); document.getElementById('date').value = today.toISOString().slice(0,10);
+  document.getElementById('date').value = new Date().toISOString().slice(0,10);
 
-  // logo fallback: try svg, else png, else text
-  const logo = document.getElementById('logoImg');
-  // if svg fails to load, fallback to png; if png fails create text node
-  logo.addEventListener('error', ()=>{
-    if(logo.src && logo.src.endsWith('.svg')){
-      logo.src = 'icon-192.png';
-    } else {
-      // replace img with text
-      const parent = logo.parentElement;
-      parent.removeChild(logo);
-      const span = document.createElement('div');
-      span.style.fontWeight = '800';
-      span.textContent = 'GAS T.';
-      parent.insertBefore(span, parent.firstChild);
-    }
-  });
+  // stat clicks -> open overlay with tab
+  document.getElementById('statAvgDaily').addEventListener('click', ()=>openOverlay('daily'));
+  document.getElementById('statEstDaily').addEventListener('click', ()=>openOverlay('daily'));
+  document.getElementById('statEstMonthly').addEventListener('click', ()=>openOverlay('monthly'));
+  document.getElementById('statEstMonthlyCost').addEventListener('click', ()=>openOverlay('monthly'));
+  document.getElementById('statTotal').addEventListener('click', ()=>openOverlay('daily'));
 
-  // bind buttons (touch + click)
+  // buttons
   const addBtn = document.getElementById('addBtn');
   addBtn.addEventListener('click', addReading);
   addBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); addReading(); });
 
-  const cancelEditBtn = document.getElementById('cancelEditBtn');
-  cancelEditBtn.addEventListener('click', cancelEdit);
-  cancelEditBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); cancelEdit(); });
-
-  const clearBtn = document.getElementById('clearBtn');
-  clearBtn.addEventListener('click', clearAll);
-  clearBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); clearAll(); });
-
-  const saveBtn = document.getElementById('saveBtn');
-  saveBtn.addEventListener('click', addReading);
-  saveBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); addReading(); });
-
-  const exportBtn = document.getElementById('exportBtn');
-  exportBtn.addEventListener('click', exportCsv);
-  exportBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); exportCsv(); });
+  document.getElementById('cancelEditBtn').addEventListener('click', cancelEdit);
+  document.getElementById('clearBtn').addEventListener('click', clearAll);
+  document.getElementById('exportBtn').addEventListener('click', exportCsv);
 
   const importBtn = document.getElementById('importBtn');
   const fileInput = document.getElementById('fileImport');
   importBtn.addEventListener('click', ()=> fileInput.click());
-  importBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); fileInput.click(); });
+  fileInput.addEventListener('change', ev=>{ const f = ev.target.files && ev.target.files[0]; if(f) importCsvHandler(f); fileInput.value = ''; });
 
-  fileInput.addEventListener('change', (ev)=>{
-    const f = ev.target.files && ev.target.files[0];
-    if(f) importCsvHandler(f);
-    fileInput.value = '';
+  // overlay controls
+  document.getElementById('closeOverlay').addEventListener('click', closeOverlay);
+  document.querySelectorAll('#historyTabs button').forEach(b=>{ b.addEventListener('click', ()=> selectHistoryTab(b.dataset.tab)); });
+  document.getElementById('exportHistoryBtn').addEventListener('click', exportHistoryView);
+
+  // logo fallback
+  const logo = document.getElementById('logoImg');
+  logo.addEventListener('error', ()=>{
+    if(logo.src && logo.src.endsWith('.svg')) logo.src = 'icon-192.png';
+    else { const p = logo.parentElement; p.removeChild(logo); const txt = document.createElement('div'); txt.style.fontWeight='800'; txt.textContent='GAS T.'; p.insertBefore(txt,p.firstChild); }
   });
 
-  // load initial data
+  // load data
   loadAll();
 });
 </script>
