@@ -675,7 +675,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   // logo fallback
   const logo = document.getElementById('logoImg');
   logo.addEventListener('error', ()=>{
-    if(logo.src && logo.src.endsWith('.svg')) logo.src = 'icon-192.png';
+    if(logo.src && logo.src.endsWith('.svg')) logo.src = 'icon-180.png';
     else { const p = logo.parentElement; p.removeChild(logo); const txt = document.createElement('div'); txt.style.fontWeight='800'; txt.textContent='GAS T.'; p.insertBefore(txt,p.firstChild); }
   });
 
