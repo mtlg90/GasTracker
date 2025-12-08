@@ -59,6 +59,9 @@
     .group h5{margin:0 0 6px 0}
     .small-action{padding:6px 10px;border-radius:8px;font-size:13px}
     .muted-btn{background:transparent;border:1px dashed rgba(255,255,255,0.04);color:var(--muted)}
+    /* forecast small card styling */
+    .forecast-card { margin-top:12px; padding:12px; border-radius:10px; background:linear-gradient(180deg, rgba(11,18,32,0.6), rgba(7,16,35,0.6)); border:1px solid rgba(255,255,255,0.03); }
+    .forecast-result { background: linear-gradient(90deg, rgba(10,132,255,0.08), rgba(124,58,237,0.06)); padding:12px; border-radius:8px; margin-top:10px; border-left:3px solid var(--accent1); }
     /* touch improvements */
     button, input, textarea { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   </style>
@@ -154,6 +157,54 @@
           <canvas id="chart"></canvas>
         </div>
 
+        <!-- Forecast small panel integrated into right column -->
+        <div class="forecast-card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <h3 style="margin:0">📈 Previsione Bolletta (mese corrente)</h3>
+              <div class="small muted">Materia prima PSV → conversione → previsione</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button id="btnFetchPsv" class="ghost small-action" title="Scarica PSV">Fetch PSV</button>
+              <button id="btnSaveForecastParams" class="ghost small-action" title="Salva parametri">Salva parametri</button>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+            <div>
+              <label>Prezzo PSV (€/MWh) — media giorni passati</label>
+              <input id="forecast_psv_mwh" type="text" placeholder="es. 45.3">
+            </div>
+            <div>
+              <label>Prezzo (€/Smc) — inserisci se preferisci</label>
+              <input id="forecast_psv_smc" type="text" placeholder="es. 0.48">
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:10px;align-items:center">
+            <div style="flex:1">
+              <label>Lettura attuale (Smc)</label>
+              <input id="forecast_lettura_input" type="number" step="0.001" placeholder="usa il pulsante per usare l'ultima lettura" />
+            </div>
+            <div style="width:140px">
+              <label>Giorno di riferimento</label>
+              <input id="forecast_date_input" type="date" />
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:10px">
+            <button id="btnCalcForecast">Calcola previsione</button>
+            <button id="btnResetForecast" class="muted-btn">Reset</button>
+          </div>
+
+          <div id="forecast_output" style="margin-top:12px; display:none" class="forecast-result"></div>
+
+          <div style="margin-top:10px" class="small muted">
+            <div>Ultimi PSV salvati: <span id="psv_last_count">0</span></div>
+            <div>Ultimo fetch: <span id="psv_last_time">-</span></div>
+          </div>
+        </div>
+
         <h4 style="margin-top:12px">Registro letture</h4>
         <table role="table" aria-label="Registro letture">
           <thead><tr><th>Data</th><th>Ora</th><th>Smc</th><th>Temp</th><th>Note</th><th>Azioni</th></tr></thead>
@@ -235,12 +286,37 @@ function initChart(){
   const ctx = document.getElementById('chart').getContext('2d');
   chart = new Chart(ctx, {
     type: 'line',
-    data: { labels: [], datasets: [{ label: 'Smc (ultima lettura/giorno)', data: [], fill: true, tension: 0.3, backgroundColor: 'rgba(124,58,237,0.12)', borderColor: '#7c3aed', pointRadius: 3 }]},
-    options: { responsive: true, plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } }, scales: { x: { display: true }, y: { display: true } } }
+    data: {
+      labels: [],
+      datasets: [
+        { label: 'Smc (ultima lettura/giorno)', yAxisID: 'y1', data: [], fill: false, tension: 0.3, borderColor: '#7c3aed', pointRadius: 3 },
+        { label: 'PSV €/Smc', yAxisID: 'y2', data: [], fill: false, tension: 0.3, borderColor: '#06b6d4', pointRadius: 2, borderDash: [4,3] }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: true }},
+      scales: {
+        x: { display: true },
+        y1: { type: 'linear', position: 'left', title: { display:true, text: 'Smc' } },
+        y2: { type: 'linear', position: 'right', grid: { drawOnChartArea:false }, title: { display:true, text: '€/Smc' } }
+      }
+    }
   });
 }
 
-/* ================== Core logic ================== */
+/* ================== Forecast defaults (from uploaded bolletta) ================== */
+const FORECAST_DEFAULTS = {
+  kwh_per_smc: 10.9325,
+  oneriHeraPerSmc: 0.62917,
+  spesaVenditaPerSmc: 0.481944,
+  quotaFissaMensile: 14.20,
+  areraStartDate: '2026-01-01',
+  oneriAreraPerSmc: 0.18
+};
+
+/* ================== Core logic (readings CRUD + forecast + PSV fetch) ================== */
 function startEditing(key){
   db.ref('readings/' + key).once('value').then(snap=>{
     const r = snap.val();
@@ -314,7 +390,7 @@ function addReading(){
   const newKey = db.ref('readings').push().key;
   const updates = {};
   updates['/readings/' + newKey] = { date, datetime, reading, temperature, notes, timestamp };
-  // persist settings
+  // persist settings (price_mp, fixed_charge)
   updates['/settings/price_mp'] = parseFloat(document.getElementById('price_mp').value) || 0;
   updates['/settings/fixed_charge'] = parseFloat(document.getElementById('fixed_charge').value) || 0;
 
@@ -334,17 +410,141 @@ function clearAll(){
   db.ref('readings').remove().then(()=>{ showMessage('Tutti i dati cancellati','ok'); loadAll(); }).catch(e=>showMessage('Errore: '+e,'error'));
 }
 
-/* ========== Load & Render ========= */
-function loadAll(){
-  Promise.all([ db.ref('readings').once('value'), db.ref('settings').once('value') ])
-    .then(([snapR, snapS])=>{
-      const readingsObj = snapR.val() || {};
-      const settings = snapS.val() || {};
-      if(typeof settings.price_mp !== 'undefined') document.getElementById('price_mp').value = settings.price_mp;
-      if(typeof settings.fixed_charge !== 'undefined') document.getElementById('fixed_charge').value = settings.fixed_charge;
-      renderAll(readingsObj, settings);
-    })
-    .catch(err => showMessage('Errore caricamento: '+err,'error'));
+/* ========== PSV fetch & parse (client-side attempt) ==========
+   NOTE: many GME endpoints block CORS; prefer server-side fetch.
+   This client attempt tries to fetch a CSV/JSON URL; replace GME_CSV_URL with your feed.
+   If fetch fails, user can input PSV manually in €/MWh or €/Smc.
+================================================================= */
+const GME_CSV_URL_PLACEHOLDER = 'https://www.mercatoelettrico.org/it/dati/mercatogas_esiti'; // <- replace with real CSV/JSON endpoint if available
+
+async function fetchAndStorePSV() {
+  // Try common JSON endpoints first (placeholder). If fail, show message.
+  try {
+    // Example attempt: fetch CSV-like resource (adjust to real URL that returns CSV/JSON)
+    const url = GME_CSV_URL_PLACEHOLDER; // replace with real URL if you have it
+    showMessage('Tentativo fetch PSV: ' + url, 'ok');
+    const resp = await fetch(url, {mode:'cors'});
+    if(!resp.ok) throw new Error('Fetch failed: ' + resp.status);
+    const text = await resp.text();
+    // Try to parse CSV lines with pattern date;price
+    const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0);
+    const parsed = [];
+    for(const line of lines){
+      // naive CSV parse: find two numbers in the line
+      const m = line.match(/(\d{4}-\d{2}-\d{2}).*?([0-9]+(?:[.,][0-9]+)?)/);
+      if(m){
+        const date = m[1];
+        const priceMWh = parseFloat(m[2].replace(',', '.'));
+        parsed.push({ date, priceMWh });
+      }
+    }
+    if(parsed.length===0) throw new Error('Parsing PSV non riuscito (formato inatteso)');
+    // convert €/MWh -> €/Smc using kWh_per_smc (from forecast params stored in DB or defaults)
+    const forecastParamsSnap = await db.ref('forecastParams').once('value');
+    const fp = forecastParamsSnap.val() || {};
+    const kwh_per_smc = fp.kwh_per_smc || FORECAST_DEFAULTS.kwh_per_smc;
+    const factor = 1000 / kwh_per_smc;
+    const store = parsed.map(p => ({ date: p.date, priceMWh: p.priceMWh, priceSmc: (p.priceMWh / factor) }));
+    // save to Firebase under /psv/YYYY-MM
+    const month = store[0].date.slice(0,7);
+    const updates = {};
+    updates['/psv/' + month] = store;
+    updates['/psv_meta/lastFetched'] = Date.now();
+    updates['/psv_meta/lastCount'] = store.length;
+    await db.ref().update(updates);
+    showMessage('PSV scaricati e salvati: ' + store.length + ' righe', 'ok');
+    // update UI
+    document.getElementById('psv_last_count').textContent = store.length;
+    document.getElementById('psv_last_time').textContent = new Date().toISOString().slice(0,19).replace('T',' ');
+    // recompute forecast/chart
+    loadAll();
+    return store;
+  } catch (err) {
+    showMessage('Fetch PSV fallito: ' + err.message, 'error');
+    return null;
+  }
+}
+
+/* ========== Helper: compute forecast ========== */
+function computeForecastFromInputs(opts){
+  // opts: {lettura, dataISO, daysInMonth, psvMwhInput, psvSmcInput}
+  const lettura = Number(opts.lettura) || 0;
+  const dataISO = opts.dataISO || (new Date().toISOString().slice(0,10));
+  const days = Number(opts.daysInMonth) || (new Date(dataISO.slice(0,4), Number(dataISO.slice(5,7)), 0).getDate());
+  const giorno = new Date(dataISO).getDate() || 1;
+  const consumoPrevisto = (giorno>0) ? (lettura * (days / giorno)) : lettura;
+
+  // obtain forecast params from DB (synchronously we will read cached copy stored at window.__forecastParams)
+  const fp = window.__forecastParams || FORECAST_DEFAULTS;
+  // price selection: priority: psvSmcInput -> psvMwhInput converted -> if missing, average PSV from DB month -> fallback spesaVenditaPerSmc
+  let psmc = null;
+  if(opts.psvSmcInput && !isNaN(Number(opts.psvSmcInput))) psmc = Number(opts.psvSmcInput);
+  else if(opts.psvMwhInput && !isNaN(Number(opts.psvMwhInput))){
+    const factor = 1000 / (fp.kwh_per_smc || FORECAST_DEFAULTS.kwh_per_smc);
+    psmc = Number(opts.psvMwhInput) / factor;
+  } else {
+    // try to read /psv for current month in window.__psvCache (populated by loadAll)
+    const month = dataISO.slice(0,7);
+    const psvCache = window.__psvCache && window.__psvCache[month];
+    if(psvCache && psvCache.length){
+      const avg = psvCache.reduce((s,p)=>s + (p.priceSmc||0),0) / psvCache.length;
+      psmc = avg;
+    } else {
+      psmc = fp.spesaVenditaPerSmc || FORECAST_DEFAULTS.spesaVenditaPerSmc;
+    }
+  }
+
+  // choose oneri depending on date (Hera or ARERA transition)
+  const areraStart = new Date(fp.areraStartDate || FORECAST_DEFAULTS.areraStartDate);
+  const oneriPerSmc = (new Date(dataISO) >= areraStart) ? (fp.oneriAreraPerSmc || FORECAST_DEFAULTS.oneriAreraPerSmc) : (fp.oneriHeraPerSmc || FORECAST_DEFAULTS.oneriHeraPerSmc);
+
+  const costoMateria = consumoPrevisto * psmc;
+  const costoOneri = consumoPrevisto * oneriPerSmc;
+  const totale = costoMateria + costoOneri + (fp.quotaFissaMensile || FORECAST_DEFAULTS.quotaFissaMensile);
+
+  return {
+    consumoPrevisto, psmc, costoMateria, costoOneri, quota: fp.quotaFissaMensile || FORECAST_DEFAULTS.quotaFissaMensile, totale, oneriPerSmc
+  };
+}
+
+/* ========== Load & Render (reads settings, psv, readings) ========== */
+async function loadAll(){
+  try {
+    const [snapR, snapS, snapPsv, snapFp] = await Promise.all([
+      db.ref('readings').once('value'),
+      db.ref('settings').once('value'),
+      db.ref('psv').once('value'),
+      db.ref('forecastParams').once('value')
+    ]);
+    const readingsObj = snapR.val() || {};
+    const settings = snapS.val() || {};
+    const psvObj = snapPsv.val() || {};
+    const forecastParams = snapFp.val() || {};
+
+    // merge forecast params into cached object
+    window.__forecastParams = Object.assign({}, FORECAST_DEFAULTS, forecastParams);
+
+    // load settings into fields
+    if(typeof settings.price_mp !== 'undefined') document.getElementById('price_mp').value = settings.price_mp;
+    if(typeof settings.fixed_charge !== 'undefined') document.getElementById('fixed_charge').value = settings.fixed_charge;
+
+    // load psv meta
+    const psvMetaSnap = await db.ref('psv_meta').once('value');
+    const psvMeta = psvMetaSnap.val() || {};
+    document.getElementById('psv_last_count').textContent = psvMeta.lastCount || 0;
+    document.getElementById('psv_last_time').textContent = psvMeta.lastFetched ? new Date(psvMeta.lastFetched).toISOString().slice(0,19).replace('T',' ') : '-';
+
+    // cache psv in window for computeForecast
+    window.__psvCache = psvObj;
+
+    // render readings and computed stats
+    renderAll(readingsObj, settings);
+    // update forecast inputs defaults from forecastParams
+    // put default kwh etc in UI if you like (we don't expose all fields in UI to avoid clutter)
+    window.__forecastParams = Object.assign({}, FORECAST_DEFAULTS, forecastParams);
+  } catch (err){
+    showMessage('Errore loadAll: '+err,'error');
+  }
 }
 
 function renderAll(readingsObj, settings){
@@ -426,10 +626,40 @@ function renderAll(readingsObj, settings){
   document.getElementById('estWeeklyCost').textContent = estWeeklyCost !== null ? estWeeklyCost.toFixed(2) + ' €' : '-';
   document.getElementById('todayConsumption').textContent = todayIntra !== null ? (todayIntra.toFixed(3) + ' Smc') : '-';
 
-  // update chart
+  // update chart (labels: lastPerDay.dates ; data: lastPerDay.reading) and overlay PSV if available
   const labels = lastPerDay.map(x=>x.date);
   const data = lastPerDay.map(x=>x.reading);
-  updateChart(labels, data);
+
+  // get PSV series for months present in lastPerDay (take most recent month)
+  const months = Object.keys(window.__psvCache || {});
+  let psvSeries = [];
+  let psvLabels = [];
+  if(months.length){
+    // choose current month if present, otherwise most recent
+    const currentMonth = (new Date()).toISOString().slice(0,7);
+    const chosen = window.__psvCache[currentMonth] ? currentMonth : months[months.length-1];
+    const arr = window.__psvCache[chosen] || [];
+    psvLabels = arr.map(p=>p.date);
+    psvSeries = arr.map(p=>p.priceSmc);
+    document.getElementById('psv_last_count').textContent = arr.length;
+  } else {
+    document.getElementById('psv_last_count').textContent = 0;
+  }
+
+  // combine labels for chart (unique union)
+  const unionLabels = Array.from(new Set([...labels, ...psvLabels])).sort();
+
+  // map data to union labels
+  const dataForChart = unionLabels.map(lbl=>{
+    const idx = labels.indexOf(lbl);
+    return idx>=0 ? data[idx] : null;
+  });
+  const psvForChart = unionLabels.map(lbl=>{
+    const idx = psvLabels.indexOf(lbl);
+    return idx>=0 ? psvSeries[idx] : null;
+  });
+
+  updateChart(unionLabels, dataForChart, psvForChart);
 
   // monthly aggregation (min/max approach)
   const byMonth = {};
@@ -445,9 +675,9 @@ function renderAll(readingsObj, settings){
   });
 
   // render monthly table
-  const months = Object.keys(byMonth).sort().reverse();
+  const monthsKeys = Object.keys(byMonth).sort().reverse();
   const monthlyBody = document.getElementById('monthlyBody'); monthlyBody.innerHTML = '';
-  months.forEach(m=>{
+  monthsKeys.forEach(m=>{
     const obj = byMonth[m];
     let consumption = null;
     if(typeof obj.min !== 'undefined' && typeof obj.max !== 'undefined' && obj.max >= obj.min) consumption = obj.max - obj.min;
@@ -464,10 +694,11 @@ function renderAll(readingsObj, settings){
 }
 
 /* ========== Chart update ========== */
-function updateChart(labels, data){
+function updateChart(labels, smcData, psvData){
   if(!chart) return;
   chart.data.labels = labels;
-  chart.data.datasets[0].data = data;
+  chart.data.datasets[0].data = smcData.map(v => v===null ? null : Number(v));
+  chart.data.datasets[1].data = psvData.map(v => v===null ? null : Number(v));
   chart.update();
 }
 
@@ -525,7 +756,8 @@ function splitCsvLine(line){
   return res.map(s=>s.replace(/^"|"$/g,'').trim());
 }
 
-/* ========== History overlay ========== */
+/* ========== Overlay history ========== */
+// ... (same overlay functions as before) ...
 function openOverlay(defaultTab='daily'){
   const overlay = document.getElementById('overlay');
   overlay.classList.add('active');
@@ -540,6 +772,7 @@ function selectHistoryTab(tab){
 }
 
 function renderHistory(tab){
+  // reuse previous implementation (omitted here for brevity but present above)
   const content = document.getElementById('historyContent');
   content.innerHTML = '';
   const computed = window.__computed || {};
@@ -679,7 +912,59 @@ document.addEventListener('DOMContentLoaded', ()=>{
     else { const p = logo.parentElement; p.removeChild(logo); const txt = document.createElement('div'); txt.style.fontWeight='800'; txt.textContent='GAS T.'; p.insertBefore(txt,p.firstChild); }
   });
 
-  // load data
+  // forecast UI events
+  document.getElementById('btnFetchPsv').addEventListener('click', async ()=> {
+    document.getElementById('btnFetchPsv').textContent = 'Fetching...';
+    await fetchAndStorePSV();
+    document.getElementById('btnFetchPsv').textContent = 'Fetch PSV';
+  });
+
+  document.getElementById('btnCalcForecast').addEventListener('click', ()=>{
+    const lett = document.getElementById('forecast_lettura_input').value.trim();
+    const data = document.getElementById('forecast_date_input').value || new Date().toISOString().slice(0,10);
+    const days = new Date(data.slice(0,4), Number(data.slice(5,7)), 0).getDate();
+    const psvMwh = document.getElementById('forecast_psv_mwh').value.trim();
+    const psvSmc = document.getElementById('forecast_psv_smc').value.trim();
+    const res = computeForecastFromInputs({ lettura: lett, dataISO: data, daysInMonth: days, psvMwhInput: psvMwh, psvSmcInput: psvSmc});
+    const out = document.getElementById('forecast_output');
+    out.style.display = 'block';
+    out.innerHTML = `<div><strong>Consumo previsto:</strong> ${res.consumoPrevisto.toFixed(3)} Smc</div>
+                     <div><strong>Prezzo materia usato:</strong> ${res.psmc.toFixed(5)} €/Smc</div>
+                     <div><strong>Spesa materia:</strong> € ${res.costoMateria.toFixed(2)}</div>
+                     <div><strong>Spesa oneri:</strong> € ${res.costoOneri.toFixed(2)} (€/Smc = ${res.oneriPerSmc.toFixed(4)})</div>
+                     <div><strong>Quota fissa:</strong> € ${res.quota.toFixed(2)}</div>
+                     <hr><h3>Totale stimato: € ${res.totale.toFixed(2)}</h3>`;
+  });
+
+  document.getElementById('btnResetForecast').addEventListener('click', ()=> {
+    document.getElementById('forecast_psv_mwh').value='';
+    document.getElementById('forecast_psv_smc').value='';
+    document.getElementById('forecast_lettura_input').value='';
+    document.getElementById('forecast_date_input').value = new Date().toISOString().slice(0,10);
+    document.getElementById('forecast_output').style.display='none';
+  });
+
+  document.getElementById('btnSaveForecastParams').addEventListener('click', async ()=>{
+    // save current forecast defaults into /forecastParams in Firebase
+    const fp = {
+      kwh_per_smc: FORECAST_DEFAULTS.kwh_per_smc,
+      oneriHeraPerSmc: FORECAST_DEFAULTS.oneriHeraPerSmc,
+      spesaVenditaPerSmc: FORECAST_DEFAULTS.spesaVenditaPerSmc,
+      quotaFissaMensile: FORECAST_DEFAULTS.quotaFissaMensile,
+      areraStartDate: FORECAST_DEFAULTS.areraStartDate,
+      oneriAreraPerSmc: FORECAST_DEFAULTS.oneriAreraPerSmc
+    };
+    // you can expand UI to let user edit these before saving; for now we save defaults
+    await db.ref('forecastParams').set(fp);
+    showMessage('Parametri previsione salvati in Firebase', 'ok');
+  });
+
+  // export/import buttons
+  document.getElementById('exportBtn').addEventListener('click', exportCsv);
+  document.getElementById('importBtn').addEventListener('click', ()=> document.getElementById('fileImport').click());
+  document.getElementById('fileImport').addEventListener('change', ev=> { const f = ev.target.files && ev.target.files[0]; if(f) importCsvHandler(f); ev.target.value=''; });
+
+  // load initial data
   loadAll();
 });
 </script>
